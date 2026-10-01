@@ -78,8 +78,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.metadata.MetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -102,6 +100,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     public YamlConfiguration lootFile;
     YamlConfiguration mobSaveFile;
     private HashMap<Entity, Entity> mountList = new HashMap();
+    // Infernal Mob の UUID と能力の文字列(サーバーの起動中だけ保持する。以前は Entity の Metadata "infernalMetadata" に持っていた)
+    private final HashMap<UUID, String> infernalMetadata = new HashMap<>();
     ArrayList<Player> errorList = new ArrayList();
     ArrayList<Player> levitateList = new ArrayList();
     public ArrayList<Player> fertileList = new ArrayList();
@@ -232,14 +232,15 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         UUID id = ent.getUniqueId();
         if (idSearch(id) == -1) {
             List<String> aList = null;
-            for (MetadataValue v : ent.getMetadata("infernalMetadata")) {
-                aList = new ArrayList(Arrays.asList(v.asString().split(",")));
+            String saved = this.infernalMetadata.get(id);
+            if (saved != null) {
+                aList = new ArrayList(Arrays.asList(saved.split(",")));
             }
             if (aList == null) {
                 if (this.mobSaveFile.getString(ent.getUniqueId().toString()) != null) {
                     aList = new ArrayList(Arrays.asList(this.mobSaveFile.getString(ent.getUniqueId().toString()).split(",")));
                     String list = getPowerString(ent, aList);
-                    ent.setMetadata("infernalMetadata", new FixedMetadataValue(this, list));
+                    this.infernalMetadata.put(id, list);
                 } else {
                     aList = getAbilitiesAmount(ent);
                 }
@@ -391,7 +392,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             }
         }
         String list = getPowerString(ent, powerList);
-        ent.setMetadata("infernalMetadata", new FixedMetadataValue(this, list));
+        this.infernalMetadata.put(ent.getUniqueId(), list);
         try {
             this.mobSaveFile.set(ent.getUniqueId().toString(), list);
             this.mobSaveFile.save(this.saveYML);
@@ -414,6 +415,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     void removeMob(int mobIndex) throws IOException {
         String id = this.infernalList.get(mobIndex).id.toString();
         this.infernalList.remove(mobIndex);
+        this.infernalMetadata.remove(UUID.fromString(id));
         this.mobSaveFile.set(id, null);
         this.mobSaveFile.save(this.saveYML);
     }
