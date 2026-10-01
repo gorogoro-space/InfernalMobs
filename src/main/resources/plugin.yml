@@ -3,7 +3,8 @@ main: io.hotmail.com.jacob_vejvoda.infernal_mobs.infernal_mobs
 version: '${version}'
 softdepend: [Vault, WizardlyMagic]
 api-version: '1.21.11'
-author: Eliminator
+authors: [Eliminator, kubotan]
+website: https://github.com/gorogoro-space/InfernalMobs
 
 commands:
   infernalmobs:
