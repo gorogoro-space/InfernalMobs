@@ -1,13 +1,14 @@
 package io.hotmail.com.jacob_vejvoda.infernal_mobs;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarFlag;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
 import org.bukkit.entity.*;
 import org.bukkit.event.Listener;
+import org.bukkit.scoreboard.Criteria;
 import org.bukkit.scoreboard.DisplaySlot;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
@@ -76,11 +77,10 @@ public class GUI implements Listener {
             clearInfo(p);
     }
 
-    @SuppressWarnings("deprecation")
     private static void showBossBar(Player p, Entity e) {
         List<String> oldMobAbilityList = plugin.findMobAbilities(e.getUniqueId());
         String tittle = plugin.getConfig().getString("bossBarsName", "&fLevel <powers> &fInfernal <mobName>");
-        String mobName = e.getType().getName().replace("_", " ");
+        String mobName = e.getType().getKey().getKey().replace("_", " ");
         String prefix = plugin.getConfig().getString("namePrefix", "&fInfernal");
         if (plugin.getConfig().getString("levelPrefixs." + oldMobAbilityList.size()) != null) {
             prefix = plugin.getConfig().getString("levelPrefixs." + oldMobAbilityList.size());
@@ -103,7 +103,7 @@ public class GUI implements Listener {
             x.printStackTrace();
         }
         tittle = tittle.replace("<abilities>", abilities.substring(0, 1).toUpperCase() + abilities.substring(1));
-        tittle = ChatColor.translateAlternateColorCodes('&', tittle);
+        tittle = LegacyText.color(tittle);
 
         if (!bossBars.containsKey(e)) {
             BarColor bc = BarColor.valueOf(plugin.getConfig().getString("bossBarSettings.defaultColor"));
@@ -116,10 +116,10 @@ public class GUI implements Listener {
             if (ls != null)
                 bs = BarStyle.valueOf(ls);
             //Per InfernalMob Setings
-            String mc = plugin.getConfig().getString("bossBarSettings.perMob." + e.getType().getName() + ".color");
+            String mc = plugin.getConfig().getString("bossBarSettings.perMob." + e.getType().getKey().getKey() + ".color");
             if (mc != null)
                 bc = BarColor.valueOf(mc);
-            String ms = plugin.getConfig().getString("bossBarSettings.perMob." + e.getType().getName() + ".style");
+            String ms = plugin.getConfig().getString("bossBarSettings.perMob." + e.getType().getKey().getKey() + ".style");
             if (ms != null)
                 bs = BarStyle.valueOf(ms);
             BossBar bar = Bukkit.createBossBar(tittle, bc, bs, BarFlag.CREATE_FOG);
@@ -129,12 +129,11 @@ public class GUI implements Listener {
         if (!((BossBar) bossBars.get(e)).getPlayers().contains(p))
             ((BossBar) bossBars.get(e)).addPlayer(p);
         float health = (float) ((Damageable) e).getHealth();
-        float maxHealth = (float) ((Damageable) e).getMaxHealth();
+        float maxHealth = (float) ((LivingEntity) e).getAttribute(Attribute.MAX_HEALTH).getValue();
         float setHealth = (health * 100.0f) / maxHealth;
         ((BossBar) bossBars.get(e)).setProgress(setHealth / 100.0f);
     }
 
-    @SuppressWarnings("deprecation")
     private static void clearInfo(Player player) {
         if (plugin.getConfig().getBoolean("enableBossBar")) {
             //BossBarAPI.removeBar(player);
@@ -151,7 +150,6 @@ public class GUI implements Listener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static void fixScoreboard(Player player, Entity e, List<String> abilityList) {
         if (plugin.getConfig().getBoolean("enableScoreBoard") && (e instanceof Damageable)) {
             //String name = getMobNameTag(e);
@@ -168,7 +166,7 @@ public class GUI implements Listener {
             Scoreboard board = playerScoreBoard.get(player.getName());
             //System.out.println("Board = " + board);
             if (board.getObjective(DisplaySlot.SIDEBAR) == null) {
-                o = board.registerNewObjective(player.getName(), "dummy");
+                o = board.registerNewObjective(player.getName(), Criteria.DUMMY, LegacyText.toComponent(player.getName()));
                 o.setDisplaySlot(DisplaySlot.SIDEBAR);
             } else {
                 o = board.getObjective(DisplaySlot.SIDEBAR);
@@ -177,7 +175,7 @@ public class GUI implements Listener {
             //Name
             //System.out.println("Name: " + e.getType().getName());
             //System.out.println("OBJ = " + o);
-            o.setDisplayName(e.getType().getName());
+            o.displayName(LegacyText.toComponent(e.getType().getKey().getKey()));
             //System.out.println("Set ScoreBoard Name");
             //Remove Old
             //for(OfflinePlayer p : board.getPlayers())
@@ -203,7 +201,7 @@ public class GUI implements Listener {
                 //Display HP
                 score = score + 1;
                 float health = (float) ((Damageable) e).getHealth();
-                float maxHealth = (float) ((Damageable) e).getMaxHealth();
+                float maxHealth = (float) ((LivingEntity) e).getAttribute(Attribute.MAX_HEALTH).getValue();
                 double roundOff = Math.round(health * 100.0) / 100.0;
                 //Score hDisplayScore = o.getScore(Bukkit.getOfflinePlayer(roundOff + "/" + maxHealth));
                 //hDisplayScore.setScore(score);
@@ -239,13 +237,12 @@ public class GUI implements Listener {
         }
     }
 
-    @SuppressWarnings("deprecation")
     public String getMobNameTag(Entity entity) {
         List<String> oldMobAbilityList = plugin.findMobAbilities(entity.getUniqueId());
         String tittle = null;
         try {
             tittle = plugin.getConfig().getString("nameTagsName", "&fInfernal <mobName>");
-            String mobName = entity.getType().getName().replace("_", " ");
+            String mobName = entity.getType().getKey().getKey().replace("_", " ");
 
             tittle = tittle.replace("<mobName>", mobName.substring(0, 1).toUpperCase() + mobName.substring(1));
             tittle = tittle.replace("<mobLevel>", "" + oldMobAbilityList.size());
@@ -261,7 +258,7 @@ public class GUI implements Listener {
             if (plugin.getConfig().getString("levelPrefixs." + oldMobAbilityList.size()) != null)
                 prefix = plugin.getConfig().getString("levelPrefixs." + oldMobAbilityList.size());
             tittle = tittle.replace("<prefix>", prefix.substring(0, 1).toUpperCase() + prefix.substring(1));
-            tittle = ChatColor.translateAlternateColorCodes('&', tittle);
+            tittle = LegacyText.color(tittle);
         } catch (Exception x) {
             plugin.getLogger().log(Level.SEVERE, x.getMessage());
             x.printStackTrace();
