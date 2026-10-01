@@ -37,6 +37,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
@@ -813,9 +814,23 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
         return null;
     }
-    
+
+    // setloot で上書きする前に消す、アイテムの中身に関する項目(lore0〜 のような番号付きの説明文も消す)。
+    // mobs、powersMin / powersMax、chancePercentage、commands など、落とす条件の項目は残す
+    private static final Set<String> SETLOOT_ITEM_KEYS = Set.of("item", "amount", "durability", "name", "lore", "minLore", "maxLore",
+            "enchantments", "minEnchantments", "maxEnchantments", "author", "title", "pages", "patterns", "colour", "potion", "owner", "flags");
+
 	private void setItem(ItemStack s, String path, FileConfiguration fc) {
         if (s != null) {
+            // 同じ番号に上書きしたとき、前のアイテムの名前やエンチャントが混ざらないようにする
+            ConfigurationSection old = fc.getConfigurationSection(path);
+            if (old != null) {
+                for (String key : old.getKeys(false)) {
+                    if (SETLOOT_ITEM_KEYS.contains(key) || key.matches("lore\\d+")) {
+                        old.set(key, null);
+                    }
+                }
+            }
             fc.set(path + ".item", s.getType().toString());
             fc.set(path + ".amount", s.getAmount());
             if (s.getItemMeta() != null) {
