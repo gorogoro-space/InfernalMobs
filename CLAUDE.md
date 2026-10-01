@@ -64,7 +64,7 @@
 - **古い設定ファイルの自動変換**(`LegacyConfigConverter`): 起動時と `/im reload` のときに、今のバージョンで使えない名前だけを変換表で置き換える。何かを置き換えたときだけ、控えを残してから保存し、置き換えた内容をログに出す。変換表にない無効な名前は書き換えずに警告だけ出す。何度実行しても結果は同じ
   - config.yml: `enabledmobs` / `enabledMounts` / `enabledRiders` / `disabledBabyMobs` と `mobChances` のキーの MOB 名(`PIG_ZOMBIE`→`ZOMBIFIED_PIGLIN`、`MUSHROOM_COW`→`MOOSHROOM`、`SNOWMAN`→`SNOW_GOLEM`)。置き換えで重複したら 1 つにまとめる
   - loot.yml: 効果名(`potionEffects.*.potion`、`consumeEffects.*.potionEffects`。`INCREASE_DAMAGE`→`STRENGTH` など 1.20.5 の改名)、ポーションの種類(`loot.*.potion`。`HEAL`→`HEALING` など)、アイテム名(`loot.*.item`。`WOOD_SWORD`→`WOODEN_SWORD` など)、エンチャント名(`loot.*.enchantments.*.enchantment`。`DAMAGE_ALL`→`SHARPNESS` など昔の Bukkit 名)
-  - 有効かどうかは、実際にその値を読み込む処理と同じ方法で判定する(例: アイテムは `Material.valueOf`、効果は `PotionEffectType.getByName`)
+  - 有効かどうかは、実際にその値を読み込む処理と同じ方法で判定する(例: アイテムは `Material.valueOf`、効果は `infernal_mobs.getEffectType`)
 - **`setloot` で保存するポーション**: `PotionType` の名前で保存する(読み込み側の `PotionType.valueOf` と合わせた)
 - **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)

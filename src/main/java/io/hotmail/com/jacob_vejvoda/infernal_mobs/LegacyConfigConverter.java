@@ -11,14 +11,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.EntityType;
-import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
 
 /**
@@ -275,11 +275,10 @@ class LegacyConfigConverter {
         }
     }
 
-    // PotionEffectType.getByName で読んでいる
-    @SuppressWarnings("deprecation")
+    // infernal_mobs.getEffectType で読んでいる
     private static boolean isEffect(String s) {
         try {
-            return PotionEffectType.getByName(s) != null;
+            return infernal_mobs.getEffectType(s) != null;
         } catch (RuntimeException e) {
             return false;
         }
@@ -305,9 +304,9 @@ class LegacyConfigConverter {
         }
     }
 
-    // 小文字にして Registry.ENCHANTMENT から読んでいる
+    // 小文字にしてエンチャントのレジストリから読んでいる
     private static boolean isEnchantment(String s) {
         NamespacedKey key = NamespacedKey.fromString(s.toLowerCase(Locale.ROOT));
-        return key != null && Registry.ENCHANTMENT.get(key) != null;
+        return key != null && RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(key) != null;
     }
 }

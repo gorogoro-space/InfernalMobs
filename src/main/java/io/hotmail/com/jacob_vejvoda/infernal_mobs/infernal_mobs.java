@@ -8,12 +8,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
@@ -746,12 +749,12 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                             //System.out.print("1: " + NamespacedKey.minecraft(enchantment));
                             //System.out.print("2: " + Enchantment.getByKey(NamespacedKey.minecraft(enchantment)));
                             //if (Enchantment.getByKey(NamespacedKey.minecraft(enchantment)) != null) {
-                            if (Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchantment)) != null) {
+                            if (RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(enchantment)) != null) {
                                 if (level < 1) {
                                     level = 1;
                                 }
                                 //LevelledEnchantment le = new LevelledEnchantment(Enchantment.getByKey(NamespacedKey.minecraft(enchantment)), level);
-                                LevelledEnchantment le = new LevelledEnchantment(Registry.ENCHANTMENT.get(NamespacedKey.minecraft(enchantment)), level);
+                                LevelledEnchantment le = new LevelledEnchantment(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(enchantment)), level);
                                 boolean con = false;
                                 for (LevelledEnchantment testE : enchList) {
                                     if (testE.getEnchantment.equals(le.getEnchantment)) {
@@ -1255,13 +1258,18 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         String t = s.getType().toString().toLowerCase();
         return t.contains("helm") || t.contains("plate") || t.contains("leg") || t.contains("boot");
     }
+    // 推奨されない PotionEffectType.getByName と同じ処理(名前を小文字にして Registry.MOB_EFFECT から探す。見つからなければ null)
+    static PotionEffectType getEffectType(String name) {
+        NamespacedKey key = NamespacedKey.fromString(name.toLowerCase(Locale.ROOT));
+        return (key == null) ? null : Registry.MOB_EFFECT.get(key);
+    }
     public void applyEffects(LivingEntity e, int effectID) {
         int level = this.lootFile.getInt("potionEffects." + effectID + ".level");
         String name = this.lootFile.getString("potionEffects." + effectID + ".potion");
-        if ((PotionEffectType.getByName(name) == PotionEffectType.INSTANT_DAMAGE) || (PotionEffectType.getByName(name) == PotionEffectType.INSTANT_HEALTH)) {
-            e.addPotionEffect(new PotionEffect(PotionEffectType.getByName(name), 1, level - 1));
+        if ((getEffectType(name) == PotionEffectType.INSTANT_DAMAGE) || (getEffectType(name) == PotionEffectType.INSTANT_HEALTH)) {
+            e.addPotionEffect(new PotionEffect(getEffectType(name), 1, level - 1));
         } else {
-            e.addPotionEffect(new PotionEffect(PotionEffectType.getByName(name), 400, level - 1));
+            e.addPotionEffect(new PotionEffect(getEffectType(name), 400, level - 1));
         }
         if (this.lootFile.getString("potionEffects." + effectID + ".particleEffect") != null) {
             String effect = this.lootFile.getString("potionEffects." + effectID + ".particleEffect");
@@ -1284,7 +1292,7 @@ fertileList.remove(p);
 }
 }, (time*20));
         }else
-         e.addPotionEffect(new PotionEffect(PotionEffectType.getByName(name), time*20, level - 1));
+         e.addPotionEffect(new PotionEffect(getEffectType(name), time*20, level - 1));
      }
         if(e instanceof Player)
          ((Player)e).sendMessage(this.lootFile.getString("consumeEffects." + effectID + ".message").replace("&", "§"));
@@ -1476,7 +1484,7 @@ fertileList.remove(p);
                     for (int i = 0; i < j; i++) {
                         EntityType e = arrayOfEntityType[i];
                         try {
-                            if ((e.getName() != null) && (e.getName().equalsIgnoreCase(mobName))) {
+                            if ((e != EntityType.UNKNOWN) && (e.getKey().getKey().equalsIgnoreCase(mobName))) {
                                 newEnt = vic.getWorld().spawnEntity(l, e);
                             }
                         } catch (Exception ignored) {
@@ -1546,7 +1554,7 @@ fertileList.remove(p);
                     ((Damageable)damItem.getItemMeta()).setDamage(cDur + 20);
                 }
             } else if ((ability.equals("sapper")) && (isLegitVictim(atc, playerIsVictom, ability))) {
-                ((LivingEntity) vic).addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 500, 1), true);
+                ((LivingEntity) vic).addPotionEffect(new PotionEffect(PotionEffectType.HUNGER, 500, 1));
             } else if ((!ability.equals("1up")) || (!isLegitVictim(atc, playerIsVictom, ability))) {
                 Location needAir2;
                 if ((ability.equals("ender")) && (isLegitVictim(atc, playerIsVictom, ability))) {
@@ -2396,8 +2404,8 @@ Bukkit.addRecipe(sr);
                     } else if (args[0].equals("mobList")) {
                         sender.sendMessage("§6Mob List:");
                         for (EntityType et : EntityType.values())
-                            if (et != null && et.getName() != null)
-                                sender.sendMessage("§e" + et.getName());
+                            if (et != null && et != EntityType.UNKNOWN)
+                                sender.sendMessage("§e" + et.getKey().getKey());
                         return true;
                     } else if ((args.length == 1) && (args[0].equalsIgnoreCase("error"))) {
                         this.errorList.add(player);
@@ -2576,7 +2584,7 @@ Bukkit.addRecipe(sr);
                                         sender.sendMessage(oldMobAbilityList.toString());
                                     }
                                 } else {
-                                    sender.sendMessage("§cThis " + targeted.getType().getName() + " §cis not an infernal mob!");
+                                    sender.sendMessage("§cThis " + targeted.getType().getKey().getKey() + " §cis not an infernal mob!");
                                 }
                             } else {
                                 sender.sendMessage("§cUnable to find mob!");
@@ -2648,7 +2656,7 @@ Bukkit.addRecipe(sr);
         return true;
     }
     private void throwError(CommandSender sender) {
-        sender.sendMessage("--Infernal Mobs v" + this.getDescription().getVersion() + "--");
+        sender.sendMessage("--Infernal Mobs v" + this.getPluginMeta().getVersion() + "--");
         sender.sendMessage("Usage: /im reload");
         sender.sendMessage("Usage: /im worldInfo");
         sender.sendMessage("Usage: /im error");
