@@ -93,19 +93,19 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     MobAbilities mobAbilities;
     long serverTime = 0L;
     private int loops;
-    ArrayList<InfernalMob> infernalList = new ArrayList();
-    private ArrayList<UUID> dropedLootList = new ArrayList();
+    ArrayList<InfernalMob> infernalList = new ArrayList<>();
+    private ArrayList<UUID> dropedLootList = new ArrayList<>();
     // 初期化は onEnable の先頭で行う(コンストラクタの途中で getDataFolder を呼ばないため)
     private File lootYML;
     File saveYML;
     public YamlConfiguration lootFile;
     YamlConfiguration mobSaveFile;
-    private HashMap<Entity, Entity> mountList = new HashMap();
+    private HashMap<Entity, Entity> mountList = new HashMap<>();
     // Infernal Mob の UUID と能力の文字列(サーバーの起動中だけ保持する。以前は Entity の Metadata "infernalMetadata" に持っていた)
     private final HashMap<UUID, String> infernalMetadata = new HashMap<>();
-    ArrayList<Player> errorList = new ArrayList();
-    ArrayList<Player> levitateList = new ArrayList();
-    public ArrayList<Player> fertileList = new ArrayList();
+    ArrayList<Player> errorList = new ArrayList<>();
+    ArrayList<Player> levitateList = new ArrayList<>();
+    public ArrayList<Player> fertileList = new ArrayList<>();
     
     public void onEnable() {
         this.lootYML = new File(getDataFolder(), "loot.yml");
@@ -185,7 +185,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     }
 
     private void reloadPowers() {
-        ArrayList<World> wList = new ArrayList();
+        ArrayList<World> wList = new ArrayList<>();
         for (Player p : getServer().getOnlinePlayers()) {
             if (!wList.contains(p.getWorld())) {
                 wList.add(p.getWorld());
@@ -199,7 +199,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     private void scoreCheck() {
         for (Player p : getServer().getOnlinePlayers())
             GUI.fixBar(p);
-        HashMap<Entity, Entity> tmp = (HashMap<Entity, Entity>) mountList.clone();
+        HashMap<Entity, Entity> tmp = new HashMap<>(mountList);
         for (Map.Entry<Entity, Entity> hm : tmp.entrySet()) {
             if ((hm.getKey() != null) && (!hm.getKey().isDead())) {
                 if ((hm.getValue().isDead()) && ((hm.getKey() instanceof LivingEntity))) {
@@ -234,11 +234,11 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             List<String> aList = null;
             String saved = this.infernalMetadata.get(id);
             if (saved != null) {
-                aList = new ArrayList(Arrays.asList(saved.split(",")));
+                aList = new ArrayList<>(Arrays.asList(saved.split(",")));
             }
             if (aList == null) {
                 if (this.mobSaveFile.getString(ent.getUniqueId().toString()) != null) {
-                    aList = new ArrayList(Arrays.asList(this.mobSaveFile.getString(ent.getUniqueId().toString()).split(",")));
+                    aList = new ArrayList<>(Arrays.asList(this.mobSaveFile.getString(ent.getUniqueId().toString()).split(",")));
                     String list = getPowerString(ent, aList);
                     this.infernalMetadata.put(id, list);
                 } else {
@@ -453,7 +453,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             g.getEquipment().setItemInMainHandDropChance(0.0F);
         }
         ghostMove(g);
-        ArrayList<String> aList = new ArrayList();
+        ArrayList<String> aList = new ArrayList<>();
         aList.add("ender");
         if (evil) {
             aList.add("necromancer");
@@ -522,7 +522,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     }
     
     ItemStack getRandomLoot(Player player, String mob, int powers) {
-        ArrayList<Integer> lootList = new ArrayList();
+        ArrayList<Integer> lootList = new ArrayList<>();
         //for (int i = 0; i <= 512; i++) {
         for (String i : lootFile.getConfigurationSection("loot").getKeys(false)) {
             if ((lootFile.getString("loot." + i) != null) &&
@@ -607,7 +607,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 }
             }
             //Lore
-            ArrayList<String> loreList = new ArrayList();
+            ArrayList<String> loreList = new ArrayList<>();
             for (int i = 0; i <= 32; i++) {
                 if (this.lootFile.getString("loot." + loot + ".lore" + i) != null) {
                     String lore = this.lootFile.getString("loot." + loot + ".lore" + i);
@@ -740,7 +740,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 //int enchNeeded = new Random().nextInt(enMax + 1 - enMin) + enMin;
                 int enchNeeded = rand(enMin,enMax);
                 //System.out.println("Enchantments Needed: " + enchNeeded);
-                ArrayList<LevelledEnchantment> enchList = new ArrayList();
+                ArrayList<LevelledEnchantment> enchList = new ArrayList<>();
                 int safety = 0;
                 int j = 0;
                 int chance;
@@ -893,7 +893,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             if (s.getType().toString().contains("BANNER")) {
                 BannerMeta b = (BannerMeta) s.getItemMeta();
                 if (b != null) {
-                    List patList = b.getPatterns();
+                    List<Pattern> patList = b.getPatterns();
                     if (!patList.isEmpty())
                         fc.set(path + ".patterns", patList);
                 }
@@ -904,7 +904,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 BlockStateMeta bmeta = (BlockStateMeta) im;
                 Banner b = (Banner) bmeta.getBlockState();
                 fc.set(path + ".colour", b.getBaseColor().toString());
-                List patList = b.getPatterns();
+                List<Pattern> patList = b.getPatterns();
                 if (!patList.isEmpty())
                     fc.set(path + ".patterns", patList);
             }
@@ -1091,7 +1091,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             //GUI Bars And Stuff
             scoreCheck();
             //InfernalMob Stuff
-            ArrayList<InfernalMob> tmp = (ArrayList<InfernalMob>) infernalList.clone();
+            ArrayList<InfernalMob> tmp = new ArrayList<>(infernalList);
             for (InfernalMob m : tmp) {
                 final Entity mob = m.entity;
                 UUID id = mob.getUniqueId();
@@ -1769,7 +1769,7 @@ fertileList.remove(p);
                         	}
                         } else if ((ability.equals("archer")) && (isLegitVictim(atc, playerIsVictom, ability))) {
                             if ((randomNum > 7) || (randomNum == 1)) {
-                                ArrayList<Arrow> arrowList = new ArrayList();
+                                ArrayList<Arrow> arrowList = new ArrayList<>();
                                 Location loc1 = vic.getLocation();
                                 Location loc2 = atc.getLocation();
                                 if (!isSmall(atc)) {
@@ -1826,7 +1826,7 @@ fertileList.remove(p);
     }
    
     private static List<Block> getSphere(Block block1) {
-        List<Block> blocks = new LinkedList();
+        List<Block> blocks = new LinkedList<>();
         double xi = block1.getLocation().getX() + 0.5D;
         double yi = block1.getLocation().getY() + 0.5D;
         double zi = block1.getLocation().getZ() + 0.5D;
@@ -1893,7 +1893,7 @@ fertileList.remove(p);
         if (getConfig().getBoolean("effectAllPlayerAttacks")) {
             return true;
         }
-        ArrayList<String> attackAbilityList = new ArrayList();
+        ArrayList<String> attackAbilityList = new ArrayList<>();
         attackAbilityList.add("poisonous");
         attackAbilityList.add("blinding");
         attackAbilityList.add("withering");
@@ -1910,7 +1910,7 @@ fertileList.remove(p);
         if ((playerIsVictom) && (attackAbilityList.contains(ability))) {
             return true;
         }
-        ArrayList<String> defendAbilityList = new ArrayList();
+        ArrayList<String> defendAbilityList = new ArrayList<>();
         defendAbilityList.add("thief");
         defendAbilityList.add("storm");
         defendAbilityList.add("webber");
@@ -1953,7 +1953,7 @@ fertileList.remove(p);
     }
     private List<String> getAbilities(int amount) {
         List<String> allAbilitiesList = new ArrayList<>(Arrays.asList("confusing", "ghost", "morph", "mounted", "flying", "gravity", "firework", "necromancer", "archer", "molten", "mama", "potions", "explode", "berserk", "weakness", "vengeance", "webber", "storm", "sprint", "lifesteal", "ghastly", "ender", "cloaked", "1up", "sapper", "rust", "bullwark", "quicksand", "thief", "tosser", "withering", "blinding", "armoured", "poisonous"));
-        List<String> abilityList = new ArrayList();
+        List<String> abilityList = new ArrayList<>();
         int min = 1;
         for (int i = 0; i < amount; i++) {
             int max = allAbilitiesList.size();
@@ -2172,7 +2172,7 @@ fertileList.remove(p);
         }
     }
     private List<Location> getArea(Location l, double r, double t) {
-        List<Location> ll = new ArrayList();
+        List<Location> ll = new ArrayList<>();
         for (double x = l.getX() - r; x < l.getX() + r; x += t) {
             for (double y = l.getY() - r; y < l.getY() + r; y += t) {
                 for (double z = l.getZ() - r; z < l.getZ() + r; z += t) {
@@ -2543,7 +2543,7 @@ Bukkit.addRecipe(sr);
                                 Location farSpawnLoc = player.getTargetBlock(null, 200).getLocation();
                                 farSpawnLoc.setY(farSpawnLoc.getY() + 1.0D);
                                 Entity ent = player.getWorld().spawnEntity(farSpawnLoc, EntityType.fromName(args[1]));
-                                ArrayList<String> spesificAbList = new ArrayList();
+                                ArrayList<String> spesificAbList = new ArrayList<>();
                                 for (int i = 0; i <= args.length - 3; i++) {
                                     if (getConfig().getString(args[(i + 2)]) != null) {
                                         spesificAbList.add(args[(i + 2)]);
@@ -2579,7 +2579,7 @@ Bukkit.addRecipe(sr);
                             }
                             World world = Bukkit.getServer().getWorld(args[2]);
                             Location spoint = new Location(world, Integer.parseInt(args[3]), Integer.parseInt(args[4]), Integer.parseInt(args[5]));
-                            ArrayList<String> abList = new ArrayList(Arrays.asList(args).subList(6, args.length));
+                            ArrayList<String> abList = new ArrayList<>(Arrays.asList(args).subList(6, args.length));
                             if (cSpawn(sender, args[1], spoint, abList)) {
                                 sender.sendMessage("Spawned a " + args[1] + " in " + args[2] + " at " + args[3] + ", " + args[4] + ", " + args[5] + " with the abilities:");
                                 sender.sendMessage(abList.toString());
@@ -2591,7 +2591,7 @@ Bukkit.addRecipe(sr);
                                 sender.sendMessage(args[2] + " is not online!");
                                 return true;
                             }
-                            ArrayList<String> abList = new ArrayList(Arrays.asList(args).subList(3, args.length));
+                            ArrayList<String> abList = new ArrayList<>(Arrays.asList(args).subList(3, args.length));
                             if (cSpawn(sender, args[1], p.getLocation(), abList)) {
                                 sender.sendMessage("Spawned a " + args[1] + " at " + p.getName() + " with the abilities:");
                                 sender.sendMessage(abList.toString());
