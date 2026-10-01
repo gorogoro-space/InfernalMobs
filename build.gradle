@@ -3,7 +3,7 @@ plugins {
 }
 
 group = 'io.hotmail.com.jacob_vejvoda'
-version = '6.9.3'
+version = '7.0.0'
 
 repositories {
     mavenCentral()
