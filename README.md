@@ -271,7 +271,7 @@ IntelliJ IDEA の「アーティファクトのビルド」はクラスファイ
 
 ビルドが成功すると、プロジェクトのルート直下に `build/libs` フォルダが作成(または更新)され、その中に JAR ファイルが生成されます。
 
-* **生成先:** `build/libs/InfernalMobs-<version>.jar`(例: `InfernalMobs-7.0.0.jar`。バージョンは `build.gradle` の `version`)
+* **生成先:** `build/libs/InfernalMobs-<version>.jar`(例: `InfernalMobs-7.0.1.jar`。バージョンは `build.gradle` の `version`)
 
 この JAR ファイルを Minecraft サーバーの `plugins` フォルダに配置してください。
 
