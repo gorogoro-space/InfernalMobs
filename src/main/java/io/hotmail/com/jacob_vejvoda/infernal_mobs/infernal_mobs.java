@@ -817,9 +817,12 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         if (s != null) {
             fc.set(path + ".item", s.getType().toString());
             fc.set(path + ".amount", s.getAmount());
-            fc.set(path + ".durability", ((Damageable)s).getDamage());
             if (s.getItemMeta() != null) {
-                fc.set(path + ".name", LegacyText.displayName(s.getItemMeta()));
+                // 耐久値はアイテムそのものではなく ItemMeta から読む(ItemStack を Damageable にキャストすると ClassCastException になっていた)
+                fc.set(path + ".durability", ((Damageable) s.getItemMeta()).getDamage());
+                // 名前のないアイテムで name: '' を保存しない
+                if (s.getItemMeta().hasDisplayName())
+                    fc.set(path + ".name", LegacyText.displayName(s.getItemMeta()));
                 List<Component> lore = s.getItemMeta().lore();
                 if (lore != null) {
                     for (int l = 0; l < lore.size(); l++) {
@@ -835,7 +838,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 int level = hm.getValue();
                 for (int ei = 0; ei < 13; ei++) {
                     if (fc.getString(path + ".enchantments." + ei) == null) {
-                        fc.set(path + ".enchantments." + ei + ".enchantment", e.getKey());
+                        // 読み込み側は NamespacedKey.minecraft(小文字の名前) で読むので、"sharpness" のような名前だけを保存する
+                        fc.set(path + ".enchantments." + ei + ".enchantment", e.getKey().getKey());
                         fc.set(path + ".enchantments." + ei + ".level", level);
                         break;
                     }
@@ -848,7 +852,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                     int level = (Integer) ((Map.Entry) hm).getValue();
                     for (int ei = 0; ei < 13; ei++) {
                         if (fc.getString(path + ".enchantments." + ei) == null) {
-                            fc.set(path + ".enchantments." + ei + ".enchantment", e.toString());
+                            fc.set(path + ".enchantments." + ei + ".enchantment", e.getKey().getKey());
                             fc.set(path + ".enchantments." + ei + ".level", level);
                             break;
                         }
@@ -904,7 +908,9 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             }
             if (s.getType().equals(Material.PLAYER_HEAD)) {
                 SkullMeta sm = (SkullMeta) s.getItemMeta();
-                fc.set(path + ".owner", sm.getOwningPlayer().getUniqueId().toString());
+                // 持ち主のない頭では保存しない(getOwningPlayer が null になる)
+                if (sm.getOwningPlayer() != null)
+                    fc.set(path + ".owner", sm.getOwningPlayer().getUniqueId().toString());
             }
             ArrayList<String> flags = new ArrayList<>();
             for (ItemFlag f : s.getItemMeta().getItemFlags())
