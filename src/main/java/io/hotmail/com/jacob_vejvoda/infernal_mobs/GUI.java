@@ -81,12 +81,6 @@ public class GUI implements Listener {
         List<String> oldMobAbilityList = plugin.findMobAbilities(e.getUniqueId());
         String tittle = plugin.getConfig().getString("bossBarsName", "&fLevel <powers> &fInfernal <mobName>");
         String mobName = e.getType().getName().replace("_", " ");
-        if (e.getType().equals(EntityType.SKELETON)) {
-            Skeleton sk = (Skeleton) e;
-            if (sk.getSkeletonType().equals(Skeleton.SkeletonType.WITHER)) {
-                mobName = "WitherSkeleton";
-            }
-        }
         String prefix = plugin.getConfig().getString("namePrefix", "&fInfernal");
         if (plugin.getConfig().getString("levelPrefixs." + oldMobAbilityList.size()) != null) {
             prefix = plugin.getConfig().getString("levelPrefixs." + oldMobAbilityList.size());
