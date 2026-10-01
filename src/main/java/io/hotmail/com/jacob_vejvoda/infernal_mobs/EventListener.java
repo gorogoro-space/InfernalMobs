@@ -370,7 +370,7 @@ public class EventListener implements Listener {
                 }
                 boolean isGhost = false;
                 try {
-                    if (event.getEntity().getEquipment().getHelmet().getItemMeta().getDisplayName().equals("§fGhost Head")) {
+                    if (LegacyText.displayName(event.getEntity().getEquipment().getHelmet().getItemMeta()).equals("§fGhost Head")) {
                         isGhost = true;
                     }
                 } catch (Exception localException1) {
@@ -394,23 +394,23 @@ public class EventListener implements Listener {
                         int index = randomGenerator.nextInt(deathMessagesList.size());
                         String deathMessage = deathMessagesList.get(index);
                         String tittle = plugin.gui.getMobNameTag(event.getEntity());
-                        deathMessage = ChatColor.translateAlternateColorCodes('&', deathMessage);
+                        deathMessage = LegacyText.color(deathMessage);
                         deathMessage = deathMessage.replace("player", player.getName());
-                        if ((player.getItemInHand() != null) && (!player.getItemInHand().getType().equals(Material.AIR))) {
-                            if (player.getItemInHand().getItemMeta().getDisplayName() != null) {
-                                deathMessage = deathMessage.replace("weapon", player.getItemInHand().getItemMeta().getDisplayName());
+                        if ((player.getInventory().getItemInMainHand() != null) && (!player.getInventory().getItemInMainHand().getType().equals(Material.AIR))) {
+                            if (player.getInventory().getItemInMainHand().getItemMeta().getDisplayName() != null) {
+                                deathMessage = deathMessage.replace("weapon", player.getInventory().getItemInMainHand().getItemMeta().getDisplayName());
                             } else {
-                                deathMessage = deathMessage.replace("weapon", player.getItemInHand().getType().name().replace("_", " ").toLowerCase());
+                                deathMessage = deathMessage.replace("weapon", player.getInventory().getItemInMainHand().getType().name().replace("_", " ").toLowerCase());
                             }
                         } else {
                             deathMessage = deathMessage.replace("weapon", "fist");
                         }
-                        if (event.getEntity().getCustomName() != null) {
-                            deathMessage = deathMessage.replace("mob", event.getEntity().getCustomName());
+                        if (event.getEntity().customName() != null) {
+                            deathMessage = deathMessage.replace("mob", LegacyText.toLegacy(event.getEntity().customName()));
                         } else {
                             deathMessage = deathMessage.replace("mob", tittle);
                         }
-                        Bukkit.broadcastMessage(deathMessage);
+                        Bukkit.broadcast(LegacyText.toComponent(deathMessage));
                     } else {
                         System.out.println("No valid death messages found!");
                     }
@@ -425,7 +425,7 @@ public class EventListener implements Listener {
                     if ((player != null) && (player.getGameMode().equals(GameMode.CREATIVE)) && (plugin.getConfig().getBoolean("noCreativeDrops"))) {
                         return;
                     }
-                    ItemStack drop = plugin.getRandomLoot(player, event.getEntity().getType().getName(), aList.size());
+                    ItemStack drop = plugin.getRandomLoot(player, event.getEntity().getType().getKey().getKey(), aList.size());
                     if (drop != null) {
                         int min = 1;
                         int max = plugin.getConfig().getInt("dropChance");
