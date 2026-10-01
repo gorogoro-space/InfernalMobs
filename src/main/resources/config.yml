@@ -66,64 +66,81 @@ mobworlds:
 effectworlds:
 - <all>
 enabledmobs:
-- ELDER_GUARDIAN
-- WITHER_SKELETON
-- STRAY
-- HUSK
-- ZOMBIE_VILLAGER
-- SKELETON_HORSE
-- ZOMBIE_HORSE
-#- DONKEY
-#- MULE
-- EVOKER
-- VEX
-- VINDICATOR
-- CREEPER
-- SKELETON
-- SPIDER
-- GIANT
-- ZOMBIE
-- SLIME
-- GHAST
-- PIG_ZOMBIE
-- ENDERMAN
-- CAVE_SPIDER
-- SILVERFISH
-- BLAZE
-- MAGMA_CUBE
-- ENDER_DRAGON
-- WITHER
-- BAT
-- WITCH
-- ENDERMITE
-- GUARDIAN
-- SHULKER
-- ILLUSIONER
-- PARROT
-#- PIG
-#- SHEEP
-#- COW
-#- CHICKEN
-#- SQUID
-#- WOLF
-#- MUSHROOM_COW
-#- SNOWMAN
-#- OCELOT
-#- IRON_GOLEM
-#- HORSE
-#- RABBIT
-- POLAR_BEAR
-- LLAMA
-#- VILLAGER
-- DROWNED
-- PHANTOM
-- PUFFERFISH
-- BEE
-- PIGLIN
-- HOGLIN
-- ZOGLIN
-- STRIDER
-- ZOMBIFIED_PIGLIN
+  # Classic hostile
+  - ELDER_GUARDIAN
+  - WITHER_SKELETON
+  - STRAY
+  - HUSK
+  - ZOMBIE_VILLAGER
+  - SKELETON_HORSE
+  - ZOMBIE_HORSE
+  - EVOKER
+  - VEX
+  - VINDICATOR
+  - CREEPER
+  - SKELETON
+  - SPIDER
+  - GIANT
+  - ZOMBIE
+  - SLIME
+  - GHAST
+  - ZOMBIFIED_PIGLIN
+  - PIGLIN_BRUTE
+  - ENDERMAN
+  - CAVE_SPIDER
+  - SILVERFISH
+  - BLAZE
+  - MAGMA_CUBE
+  - ENDER_DRAGON
+  - WITHER
+  - WITCH
+  - ENDERMITE
+  - GUARDIAN
+  - SHULKER
+  - ILLUSIONER
+  - DROWNED
+  - PHANTOM
+  - BREEZE
+  - BOGGED
+
+  # Nether & Piglin related
+  - PIGLIN
+  - HOGLIN
+  - ZOGLIN
+
+  # Passive / Neutral (uncomment what you want enabled)
+#  - PIG
+#  - SHEEP
+#  - COW
+#  - CHICKEN
+#  - MOOSHROOM
+#  - WOLF
+#  - CAT
+#  - OCELOT
+#  - HORSE
+#  - DONKEY
+#  - MULE
+#  - RABBIT
+#  - POLAR_BEAR
+#  - LLAMA
+#  - TRADER_LLAMA
+#  - PANDA
+#  - FOX
+#  - GOAT
+#  - AXOLOTL
+#  - SQUID
+#  - GLOW_SQUID
+#  - TURTLE
+#  - ARMADILLO
+#  - CAMEL
+
+  # Utility / Special
+  - VILLAGER
+  - IRON_GOLEM
+  - SNOW_GOLEM
+  - ALLAY
+  - WARDEN      # ← Be careful, very powerful
+  - SNIFFER
 enabledCharmSlots:
 - 0
 - 1
@@ -229,7 +246,7 @@ enabledMounts:
 - SHEEP
 - COW
 - CHICKEN
-- MUSHROOM_COW
+- MOOSHROOM
 - HORSE
 - POLAR_BEAR
 - LLAMA
@@ -246,10 +263,9 @@ enabledRiders:
 - VINDICATOR
 - SKELETON
 - ZOMBIE
-- PIG_ZOMBIE
 - ENDERMAN
 - WITCH
-- SNOWMAN
+- SNOW_GOLEM
 - VILLAGER
 - ILLUSIONER
 - DROWNED
@@ -257,7 +273,7 @@ enabledRiders:
 - PIGLIN
 disabledBabyMobs:
 - WOLF
-- MUSHROOM_COW
+- MOOSHROOM
 - COW
 - SHEEP
 - PIG

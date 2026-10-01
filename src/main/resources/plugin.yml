@@ -2,7 +2,7 @@ name: InfernalMobs
 main: io.hotmail.com.jacob_vejvoda.infernal_mobs.infernal_mobs
 version: '${version}'
 softdepend: [Vault, WizardlyMagic]
-api-version: 1.13
+api-version: '1.21.11'
 author: Eliminator
 
 commands:

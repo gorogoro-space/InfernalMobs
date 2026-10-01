@@ -119,52 +119,28 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             getLogger().severe("Could not create data folder!");
         }
 
-        // Handle old config (delete if version changed)
-        File configFile = new File(getDataFolder(), "config.yml");
-        if (configFile.exists()) {
-            reloadConfig();
-            String storedVersion = getConfig().getString("configVersion");
-            if (storedVersion == null || !Bukkit.getBukkitVersion().equals(storedVersion)) {
-                getLogger().info("Old config detected. Deleting to regenerate for " + Bukkit.getBukkitVersion());
-                configFile.delete();
-            }
-        }
-
-        // Determine config version for current MC version
-        String configVersion = getConfigVersion();
-        if (configVersion == null) {
-            getLogger().severe("No config available for " + Bukkit.getBukkitVersion() + " - Disabling plugin.");
-            Bukkit.getPluginManager().disablePlugin(this);
-            return;
-        }
-
         // Generate or load main config
+        File configFile = new File(getDataFolder(), "config.yml");
         if (!configFile.exists()) {
-            getLogger().info("No config.yml found - generating for " + Bukkit.getBukkitVersion() + "...");
-            saveResource(configVersion + "_config.yml", false);
-            File tempConfig = new File(getDataFolder(), configVersion + "_config.yml");
-            if (tempConfig.renameTo(configFile)) {
-                reloadConfig();
-                getConfig().set("configVersion", Bukkit.getBukkitVersion());
-                getConfig().options().header(
-                    "Chance is the chance that a mob will not be infernal, the lower the number the higher the chance. (min 1)\n" +
-                    "Enabledworlds are the worlds that infernal mobs can spawn in.\n" +
-                    "Enabledmobs are the mobs that can become infernal.\n" +
-                    "Loot is the items that are dropped when an infernal mob dies. (You can have up to 64)\n" +
-                    "Item is the item, Amount is the amount, Durability is how damaged it will be (0 is undamaged).\n" +
-                    "nameTagsLevel is the visibility level of the name tags, 0 = no tag,\n" +
-                    "1 = tag shown when your looking at the mob, 2 = tag always shown.\n" +
-                    "Note, if you have name tags set to 0, on server restart all infernal mobs will turn normal.\n" +
-                    "If you want to enable the boss bar you must have BarAPI on your server.\n" +
-                    "nameTagsName and bossBarsName have these special tags: <mobLevel> = the amount of powers the boss has.\n" +
-                    "<abilities> = A list of about 3-5 (whatever can fit) names of abilities the boss has.\n" +
-                    "<mobName> = Name of the mob, so if the mob is a creeper the mobName will be \"Creeper\"."
-                );
-                saveConfig();
-                getLogger().info("Config successfully generated!");
-            } else {
-                getLogger().severe("Failed to rename config file!");
-            }
+            getLogger().info("No config.yml found - generating...");
+            saveResource("config.yml", false);
+            reloadConfig();
+            getConfig().options().header(
+                "Chance is the chance that a mob will not be infernal, the lower the number the higher the chance. (min 1)\n" +
+                "Enabledworlds are the worlds that infernal mobs can spawn in.\n" +
+                "Enabledmobs are the mobs that can become infernal.\n" +
+                "Loot is the items that are dropped when an infernal mob dies. (You can have up to 64)\n" +
+                "Item is the item, Amount is the amount, Durability is how damaged it will be (0 is undamaged).\n" +
+                "nameTagsLevel is the visibility level of the name tags, 0 = no tag,\n" +
+                "1 = tag shown when your looking at the mob, 2 = tag always shown.\n" +
+                "Note, if you have name tags set to 0, on server restart all infernal mobs will turn normal.\n" +
+                "If you want to enable the boss bar you must have BarAPI on your server.\n" +
+                "nameTagsName and bossBarsName have these special tags: <mobLevel> = the amount of powers the boss has.\n" +
+                "<abilities> = A list of about 3-5 (whatever can fit) names of abilities the boss has.\n" +
+                "<mobName> = Name of the mob, so if the mob is a creeper the mobName will be \"Creeper\"."
+            );
+            saveConfig();
+            getLogger().info("Config successfully generated!");
         } else {
             reloadConfig();
         }
@@ -172,15 +148,13 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         // Generate or load loot.yml
         if (!lootYML.exists()) {
             getLogger().info("No loot.yml found - generating...");
-            saveResource(configVersion + "loot.yml", false);
-            File tempLoot = new File(getDataFolder(), configVersion + "loot.yml");
-            if (tempLoot.renameTo(lootYML)) {
-                getLogger().info("Loot successfully generated!");
-            } else {
-                getLogger().warning("Failed to rename loot.yml!");
-            }
+            saveResource("loot.yml", false);
+            getLogger().info("Loot successfully generated!");
         }
         reloadLoot();
+
+        // 1.21 未満の config.yml / loot.yml に残っている古い名前を 1.21 以降の名前に置き換える
+        new LegacyConfigConverter(this).convert();
 
         // Create save file if missing
         if (!saveYML.exists()) {
@@ -192,14 +166,6 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             }
         }
 
-        // bStats Metrics
-        try {
-            new Metrics(this);
-            getLogger().info("bStats metrics enabled.");
-        } catch (Exception e) {
-            getLogger().warning("Failed to initialize bStats.");
-        }
-
         // Set up plugin methods
         applyEffect();
         reloadPowers();
@@ -207,18 +173,6 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         addRecipes();
 
         getLogger().info("InfernalMobs enabled successfully for " + Bukkit.getBukkitVersion() + "!");
-    }
-
-    private String getConfigVersion() {
-        String ver = Bukkit.getBukkitVersion(); // e.g. "1.21.11-R0.1-SNAPSHOT"
-
-        if (ver.contains("1.21")) return "1_21";
-        if (ver.contains("1.20") || ver.contains("1.19") || ver.contains("1.18") || ver.contains("1.17")) return "1_18";
-        if (ver.contains("1.16")) return "1_16";
-        if (ver.contains("1.15") || ver.contains("1.14") || ver.contains("1.13")) return "1_15";
-
-        //Let plugin load on latest version if newer MC is in use.
-        return "1_21";
     }
 
     private void reloadPowers() {
@@ -927,8 +881,10 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             //Potions
             if (s.getType().equals(Material.POTION) || s.getType().equals(Material.SPLASH_POTION) || s.getType().equals(Material.LINGERING_POTION)) {
                 PotionMeta pMeta = (PotionMeta) s.getItemMeta();
-                org.bukkit.potion.PotionData pd = pMeta.getBasePotionData();
-                fc.set(path + ".potion", pd.getType().getEffectType().getName());
+                // 読み込み側(getItem)は PotionType.valueOf で読むので、PotionType の名前で保存する
+                PotionType pt = pMeta.getBasePotionType();
+                if (pt != null)
+                    fc.set(path + ".potion", pt.name());
             }
             if ((s.getType().equals(Material.LEATHER_BOOTS)) || (s.getType().equals(Material.LEATHER_CHESTPLATE)) || (s.getType().equals(Material.LEATHER_HELMET)) || (s.getType().equals(Material.LEATHER_LEGGINGS))) {
                 LeatherArmorMeta l = (LeatherArmorMeta) s.getItemMeta();
@@ -2452,6 +2408,7 @@ Bukkit.addRecipe(sr);
                     } else if ((args.length == 1) && (args[0].equalsIgnoreCase("reload"))) {
                         reloadConfig();
                         reloadLoot();
+                        new LegacyConfigConverter(this).convert();
                         sender.sendMessage("§eConfig reloaded!");
                     } else if (args[0].equals("mobList")) {
                         sender.sendMessage("§6Mob List:");
