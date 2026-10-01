@@ -214,7 +214,7 @@ loot:
 | `enchantments` | エンチャント。番号ごとに `enchantment`(名前)、`level`(レベル。範囲も可)、`chance`(付く確率 1/この値)を書きます |
 | `minEnchantments` / `maxEnchantments` | 付けるエンチャントの数の最小・最大 |
 | `potion` | ポーションの種類(`item` がポーションのとき。`HEALING`、`STRENGTH` など) |
-| `colour` | 革の防具の色(`赤,緑,青`)。盾では色の名前(`RED` など) |
+| `colour` | 革の防具の色(`赤,緑,青`)。盾では色の名前(`RED` など)。盾で省略すると色のない普通の盾 |
 | `patterns` | 旗と盾の模様(`/im setloot` で保存したもの)。省略すると模様なし |
 | `owner` | プレイヤーの頭の持ち主(UUID) |
 | `author` / `title` / `pages` | 本の著者・題名・ページ |

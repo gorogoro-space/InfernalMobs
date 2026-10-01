@@ -32,7 +32,6 @@ import org.bukkit.Registry;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.block.Banner;
 import org.bukkit.block.Block;
 import org.bukkit.block.banner.Pattern;
 import org.bukkit.command.Command;
@@ -70,7 +69,6 @@ import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.ShapedRecipe;
 import org.bukkit.inventory.meta.BannerMeta;
-import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.BookMeta;
 import org.bukkit.inventory.meta.Damageable;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
@@ -78,6 +76,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.PotionMeta;
+import org.bukkit.inventory.meta.ShieldMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
@@ -701,15 +700,13 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             }
             //Shield
             if (stack.getType().equals(Material.SHIELD)) {
-                ItemMeta im = stack.getItemMeta();
-                BlockStateMeta bmeta = (BlockStateMeta) im;
-                Banner b = (Banner) bmeta.getBlockState();
-                List<Pattern> patList = getLootPatterns(loot);
-                b.setBaseColor(DyeColor.valueOf(lootFile.getString("loot." + loot + ".colour")));
-                b.setPatterns(patList);
-                b.update();
-                bmeta.setBlockState(b);
-                stack.setItemMeta(bmeta);
+                // 旗(Banner)を経由すると色なしを表せないので、ShieldMeta で直接設定する
+                ShieldMeta shield = (ShieldMeta) stack.getItemMeta();
+                String colour = lootFile.getString("loot." + loot + ".colour");
+                if (colour != null)   // colour がなければ色を付けない(普通の盾)
+                    shield.setBaseColor(DyeColor.valueOf(colour));
+                shield.setPatterns(getLootPatterns(loot));
+                stack.setItemMeta(shield);
             }
             //Owner
             if (stack.getType().equals(Material.PLAYER_HEAD)) {
@@ -914,11 +911,11 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             }
             //Shield
             if (s.getType().equals(Material.SHIELD)) {
-                ItemMeta im = s.getItemMeta();
-                BlockStateMeta bmeta = (BlockStateMeta) im;
-                Banner b = (Banner) bmeta.getBlockState();
-                fc.set(path + ".colour", b.getBaseColor().toString());
-                List<Pattern> patList = b.getPatterns();
+                // 旗(Banner)を経由すると色なしの盾が白になるので、ShieldMeta から読む(色なしなら colour を書かない)
+                ShieldMeta shield = (ShieldMeta) s.getItemMeta();
+                if (shield.getBaseColor() != null)
+                    fc.set(path + ".colour", shield.getBaseColor().toString());
+                List<Pattern> patList = shield.getPatterns();
                 if (!patList.isEmpty())
                     fc.set(path + ".patterns", patList);
             }
