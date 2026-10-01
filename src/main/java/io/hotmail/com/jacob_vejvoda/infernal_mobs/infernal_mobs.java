@@ -2388,23 +2388,6 @@ Bukkit.addRecipe(sr);
                     if(args[0].equalsIgnoreCase("slotTest")) {
                      for(int i : (ArrayList<Integer>)getConfig().getList("enabledCharmSlots"))
                      player.getInventory().setItem(i, new ItemStack(Material.RED_STAINED_GLASS_PANE));
-                    }else if ((args.length == 1) && (args[0].equalsIgnoreCase("fixloot"))) {
-                        ArrayList<String> list = new ArrayList<>(getConfig().getConfigurationSection("items").getKeys(false));
-                        for (String i : lootFile.getConfigurationSection("loot").getKeys(false)) {
-                            String oid = lootFile.getInt("loot." + i + ".item") + "";
-                            System.out.println(i);
-                            System.out.println("loot." + i + ".item");
-                            System.out.println(oid + ": " + list.contains(oid));
-                            if (list.contains(oid)) {
-                                lootFile.set("loot." + i + ".item", getConfig().getString("items." + oid));
-                            } else
-                                System.out.println("ERROR: " + oid);
-                        }
-                        try {
-                            this.lootFile.save(this.lootYML);
-                        } catch (IOException ignored) {
-                        }
-                        sender.sendMessage("§eLoot Fixed!");
                     } else if ((args.length == 1) && (args[0].equalsIgnoreCase("reload"))) {
                         reloadConfig();
                         reloadLoot();

@@ -66,7 +66,7 @@
   - loot.yml: 効果名(`potionEffects.*.potion`、`consumeEffects.*.potionEffects`。`INCREASE_DAMAGE`→`STRENGTH` など 1.20.5 の改名)、ポーションの種類(`loot.*.potion`。`HEAL`→`HEALING` など)、アイテム名(`loot.*.item`。`WOOD_SWORD`→`WOODEN_SWORD` など)、エンチャント名(`loot.*.enchantments.*.enchantment`。`DAMAGE_ALL`→`SHARPNESS` など昔の Bukkit 名)
   - 有効かどうかは、実際にその値を読み込む処理と同じ方法で判定する(例: アイテムは `Material.valueOf`、効果は `PotionEffectType.getByName`)
 - **`setloot` で保存するポーション**: `PotionType` の名前で保存する(読み込み側の `PotionType.valueOf` と合わせた)
-- **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot` / `fixloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
+- **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)
 
 ## 過去にハマった点・注意点
@@ -75,7 +75,6 @@
 - plugin.yml で `default: true` にした権限でも、登録されないと Bukkit は「OP のみ」として扱う。全員向けの機能を権限で縛らない
 - IntelliJ の「アーティファクトのビルド」はクラスファイルが入らないことがある。必ず Gradle でビルドする
 - paper-api 26.x は「JVM 25 以上専用」と宣言しているため、Java 21 で出力する設定ではビルドできない(1.21.11 でビルドしている理由)
-- `/im fixloot` は 1.13 より前の数字のアイテム ID を変換する古い機能で、今の config.yml にない `items` セクションを読むため、実行すると例外になる(未対応)
 - `GUI.java` の `getSkeletonType()` は削除予定の API(ビルド時に警告が出る。未対応)
 
 ## ファイル構成(src/main/java/io/hotmail/com/jacob_vejvoda/infernal_mobs/)
