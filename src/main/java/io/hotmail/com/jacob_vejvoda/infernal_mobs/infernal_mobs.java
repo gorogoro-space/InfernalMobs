@@ -637,7 +637,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 ((Damageable)meta).setDamage(durability);
                 //stack.setDurability((short) durability);
             }
-            if (name != null) {
+            // 空の名前は付けない(以前の setDisplayName("") と同じく、名前なしとして扱う)
+            if (name != null && !name.isEmpty()) {
                 meta.displayName(LegacyText.toItemComponent(name));
             }
             if (!loreList.isEmpty()) {
