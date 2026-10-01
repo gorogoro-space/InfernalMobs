@@ -106,7 +106,6 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     ArrayList<Player> levitateList = new ArrayList();
     public ArrayList<Player> fertileList = new ArrayList();
     
-    @SuppressWarnings("deprecation")
     public void onEnable() {
         this.lootYML = new File(getDataFolder(), "loot.yml");
         this.saveYML = new File(getDataFolder(), "save.yml");
@@ -134,7 +133,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             getLogger().info("No config.yml found - generating...");
             saveResource("config.yml", false);
             reloadConfig();
-            getConfig().options().header(
+            getConfig().options().setHeader(Arrays.asList((
                 "Chance is the chance that a mob will not be infernal, the lower the number the higher the chance. (min 1)\n" +
                 "Enabledworlds are the worlds that infernal mobs can spawn in.\n" +
                 "Enabledmobs are the mobs that can become infernal.\n" +
@@ -147,7 +146,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 "nameTagsName and bossBarsName have these special tags: <mobLevel> = the amount of powers the boss has.\n" +
                 "<abilities> = A list of about 3-5 (whatever can fit) names of abilities the boss has.\n" +
                 "<mobName> = Name of the mob, so if the mob is a creeper the mobName will be \"Creeper\"."
-            );
+            ).split("\n")));
             saveConfig();
             getLogger().info("Config successfully generated!");
         } else {
