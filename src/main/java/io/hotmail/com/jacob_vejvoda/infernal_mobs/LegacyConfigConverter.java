@@ -295,7 +295,6 @@ class LegacyConfigConverter {
     }
 
     // Material.valueOf で読んでいる(LEGACY_ で始まる古い名前は使えないものとして扱う)
-    @SuppressWarnings("deprecation")
     private static boolean isMaterial(String s) {
         try {
             return !Material.valueOf(s).isLegacy();
