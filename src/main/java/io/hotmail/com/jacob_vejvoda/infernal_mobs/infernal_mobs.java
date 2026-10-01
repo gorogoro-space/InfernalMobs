@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.stream.Collectors;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
@@ -813,18 +814,18 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         return null;
     }
     
-    @SuppressWarnings("deprecation")
 	private void setItem(ItemStack s, String path, FileConfiguration fc) {
         if (s != null) {
             fc.set(path + ".item", s.getType().toString());
             fc.set(path + ".amount", s.getAmount());
             fc.set(path + ".durability", ((Damageable)s).getDamage());
             if (s.getItemMeta() != null) {
-                fc.set(path + ".name", s.getItemMeta().getDisplayName());
-                if (s.getItemMeta().getLore() != null) {
-                    for (int l = 0; l < s.getItemMeta().getLore().size(); l++) {
-                        if (s.getItemMeta().getLore().get(l) != null) {
-                            fc.set(path + ".lore" + l, s.getItemMeta().getLore().get(l));
+                fc.set(path + ".name", LegacyText.displayName(s.getItemMeta()));
+                List<Component> lore = s.getItemMeta().lore();
+                if (lore != null) {
+                    for (int l = 0; l < lore.size(); l++) {
+                        if (lore.get(l) != null) {
+                            fc.set(path + ".lore" + l, LegacyText.toLegacy(lore.get(l)));
                         }
                     }
                 }
@@ -864,8 +865,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                     fc.set(path + ".title", meta.getTitle());
                 }
                 int i = 0;
-                for (String p : meta.getPages()) {
-                    fc.set(path + ".pages." + i, p);
+                for (Component p : meta.pages()) {
+                    fc.set(path + ".pages." + i, LegacyText.toLegacy(p));
                     i++;
                 }
             }
