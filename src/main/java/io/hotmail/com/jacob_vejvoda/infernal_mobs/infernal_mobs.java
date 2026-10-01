@@ -96,10 +96,11 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     private int loops;
     ArrayList<InfernalMob> infernalList = new ArrayList();
     private ArrayList<UUID> dropedLootList = new ArrayList();
-    private File lootYML = new File(getDataFolder(), "loot.yml");
-    File saveYML = new File(getDataFolder(), "save.yml");
-    public YamlConfiguration lootFile = YamlConfiguration.loadConfiguration(this.lootYML);
-    YamlConfiguration mobSaveFile = YamlConfiguration.loadConfiguration(this.saveYML);
+    // 初期化は onEnable の先頭で行う(コンストラクタの途中で getDataFolder を呼ばないため)
+    private File lootYML;
+    File saveYML;
+    public YamlConfiguration lootFile;
+    YamlConfiguration mobSaveFile;
     private HashMap<Entity, Entity> mountList = new HashMap();
     ArrayList<Player> errorList = new ArrayList();
     ArrayList<Player> levitateList = new ArrayList();
@@ -107,6 +108,11 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     
     @SuppressWarnings("deprecation")
     public void onEnable() {
+        this.lootYML = new File(getDataFolder(), "loot.yml");
+        this.saveYML = new File(getDataFolder(), "save.yml");
+        this.lootFile = YamlConfiguration.loadConfiguration(this.lootYML);
+        this.mobSaveFile = YamlConfiguration.loadConfiguration(this.saveYML);
+
         // Register Events
         getServer().getPluginManager().registerEvents(this, this);
         EventListener events = new EventListener(this);
