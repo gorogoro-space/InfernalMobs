@@ -137,7 +137,7 @@
 | `spawnMessages` | (メッセージの一覧) | 出現メッセージ。この中からランダムに 1 つ選びます |
 | `spawnMessageRadius` | `64` | 出現メッセージを送る範囲(ブロック)。`-1` で同じワールド全員、`-2` でサーバー全員 |
 | `enableDeathMessages` | `false` | Infernal Mob が倒されたときに全体へメッセージを出すか |
-| `deathMessages` | (メッセージの一覧) | 撃破メッセージ。`player` が倒した人、`mob` が MOB、`weapon` が武器の名前に置き換わります |
+| `deathMessages` | (メッセージの一覧) | 撃破メッセージ。`player` が倒した人、`mob` が MOB、`weapon` が武器の名前(名前を付けていない武器は `diamond sword` のような種類名、素手は `fist`)に置き換わります |
 
 書式の中の `<prefix>` は `namePrefix`(または `levelPrefixs`)、`<mobName>` は MOB の名前、`<mobLevel>` は能力の数、`<abilities>` は能力の名前(入るだけ)に置き換わります。
 

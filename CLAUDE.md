@@ -68,6 +68,7 @@
 - **`setloot` で保存するポーション**: `PotionType` の名前で保存する(読み込み側の `PotionType.valueOf` と合わせた)
 - **戦利品の名前・説明文**: 斜体にせずに表示する(原作は色コードのない部分だけ斜体だった)
 - **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
+- **撃破メッセージの `weapon`**: 武器に名前があればその名前、なければ種類名(`diamond sword` など)、素手なら `fist`(原作は名前のない武器だと空文字になっていた)
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)
 
 ## 過去にハマった点・注意点

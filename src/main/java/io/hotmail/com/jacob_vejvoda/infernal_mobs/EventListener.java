@@ -350,7 +350,7 @@ public class EventListener implements Listener {
         }
     }
 
-    @SuppressWarnings({"unchecked", "deprecation", "rawtypes"})
+    @SuppressWarnings({"unchecked", "rawtypes"})
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDeath(EntityDeathEvent event) {
         try {
@@ -397,8 +397,8 @@ public class EventListener implements Listener {
                         deathMessage = LegacyText.color(deathMessage);
                         deathMessage = deathMessage.replace("player", player.getName());
                         if ((player.getInventory().getItemInMainHand() != null) && (!player.getInventory().getItemInMainHand().getType().equals(Material.AIR))) {
-                            if (player.getInventory().getItemInMainHand().getItemMeta().getDisplayName() != null) {
-                                deathMessage = deathMessage.replace("weapon", player.getInventory().getItemInMainHand().getItemMeta().getDisplayName());
+                            if (player.getInventory().getItemInMainHand().getItemMeta().hasDisplayName()) {
+                                deathMessage = deathMessage.replace("weapon", LegacyText.displayName(player.getInventory().getItemInMainHand().getItemMeta()));
                             } else {
                                 deathMessage = deathMessage.replace("weapon", player.getInventory().getItemInMainHand().getType().name().replace("_", " ").toLowerCase());
                             }
