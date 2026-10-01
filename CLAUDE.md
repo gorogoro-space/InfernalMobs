@@ -85,7 +85,7 @@
 - `InfernalSpawnEvent.java`: 他のプラグイン向けの出現イベント(公開 API)
 - `ArrowHomingTask.java`: 追尾する矢(1 tick ごとのタスク)
 - `GUI.java`: 名前タグ・ボスバーなどの表示
-- `LeveledEnchantments.java`: 戦利品のエンチャント
+- `LevelledEnchantment.java`: 戦利品のエンチャント(エンチャントとレベルの組)
 - `VersionsHelper.java`: 最大体力の取得・設定
 - `LegacyConfigConverter.java`: 1.21 未満の config.yml / loot.yml の古い名前を自動で変換する
 - `src/main/resources/`: `plugin.yml`、`config.yml`、`loot.yml`、`save.yml`
