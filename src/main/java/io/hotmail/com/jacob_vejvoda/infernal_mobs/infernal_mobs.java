@@ -1632,18 +1632,18 @@ fertileList.remove(p);
                         } else if ((ability.equals("potions")) && (isLegitVictim(atc, playerIsVictom, ability))) {
                             ItemStack iStack = new ItemStack(Material.POTION);
                             PotionMeta potion = (PotionMeta) iStack.getItemMeta();
-                            switch (randomNum) {
-                                case 5:
-                                    potion.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 2), true);
-                                case 6:
-                                    potion.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 1), true);
-                                case 7:
-                                    potion.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, (20 * 15), 2), true);
-                                case 8:
-                                    potion.addCustomEffect(new PotionEffect(PotionEffectType.POISON, (20 * 5), 2), true);
-                                case 9:
-                                    potion.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, (20 * 10), 2), true);
-                            }
+                            // 原作は break のない switch (case 5〜9) で、該当する case から下をすべて実行していた。
+                            // 同じ結果になるよう、各行を「5 以上かつその case の値以下」のときに実行する
+                            if (randomNum == 5)
+                                potion.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 2), true);
+                            if ((randomNum >= 5) && (randomNum <= 6))
+                                potion.addCustomEffect(new PotionEffect(PotionEffectType.INSTANT_DAMAGE, 1, 1), true);
+                            if ((randomNum >= 5) && (randomNum <= 7))
+                                potion.addCustomEffect(new PotionEffect(PotionEffectType.WEAKNESS, (20 * 15), 2), true);
+                            if ((randomNum >= 5) && (randomNum <= 8))
+                                potion.addCustomEffect(new PotionEffect(PotionEffectType.POISON, (20 * 5), 2), true);
+                            if ((randomNum >= 5) && (randomNum <= 9))
+                                potion.addCustomEffect(new PotionEffect(PotionEffectType.SLOWNESS, (20 * 10), 2), true);
                             iStack.setItemMeta(potion);
                             Location sploc = atc.getLocation();
                             sploc.setY(sploc.getY() + 3.0D);
