@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.Effect;
@@ -323,9 +322,9 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                                 Random randomGenerator = new Random();
                                 int index = randomGenerator.nextInt(spawnMessageList.size());
                                 String spawnMessage = spawnMessageList.get(index);
-                                spawnMessage = ChatColor.translateAlternateColorCodes('&', spawnMessage);
-                                if (e.getCustomName() != null) {
-                                    spawnMessage = spawnMessage.replace("mob", e.getCustomName());
+                                spawnMessage = LegacyText.color(spawnMessage);
+                                if (e.customName() != null) {
+                                    spawnMessage = spawnMessage.replace("mob", LegacyText.toLegacy(e.customName()));
                                 } else {
                                     spawnMessage = spawnMessage.replace("mob", e.getType().toString().toLowerCase());
                                 }
@@ -335,7 +334,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                                         p.sendMessage(spawnMessage);
                                     }
                                 } else if (r == -2) {
-                                    Bukkit.broadcastMessage(spawnMessage);
+                                    Bukkit.broadcast(LegacyText.toComponent(spawnMessage));
                                 } else {
                                     for (Entity e1 : e.getNearbyEntities(r, r, r)) {
                                         if ((e1 instanceof Player)) {
@@ -439,7 +438,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
         chest.addUnsafeEnchantment(Enchantment.PROTECTION, new Random().nextInt(10) + 1);
         ItemMeta m = skull.getItemMeta();
-        m.setDisplayName("§fGhost Head");
+        m.displayName(LegacyText.toItemComponent("§fGhost Head"));
         skull.setItemMeta(m);
         g.getEquipment().setHelmet(skull);
         g.getEquipment().setChestplate(chest);
@@ -556,7 +555,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         if (!this.lootFile.getStringList("loot." + loot + ".commands").isEmpty()) {
             List<String> commandList = this.lootFile.getStringList("loot." + loot + ".commands");
             for (String command : commandList) {
-                command = ChatColor.translateAlternateColorCodes('&', command);
+                command = LegacyText.color(command);
                 command = command.replace("player", player.getName());
                 Bukkit.getServer().dispatchCommand(Bukkit.getConsoleSender(), command);
             }
@@ -611,7 +610,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             for (int i = 0; i <= 32; i++) {
                 if (this.lootFile.getString("loot." + loot + ".lore" + i) != null) {
                     String lore = this.lootFile.getString("loot." + loot + ".lore" + i);
-                    lore = ChatColor.translateAlternateColorCodes('&', lore);
+                    lore = LegacyText.color(lore);
                     loreList.add(lore);
                 }
             }
@@ -639,10 +638,10 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 //stack.setDurability((short) durability);
             }
             if (name != null) {
-                meta.setDisplayName(name);
+                meta.displayName(LegacyText.toItemComponent(name));
             }
             if (!loreList.isEmpty()) {
-                meta.setLore(loreList);
+                meta.lore(LegacyText.toItemComponents(loreList));
             }
             if (meta != null) {
                 stack.setItemMeta(meta);
@@ -659,19 +658,19 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 BookMeta bMeta = (BookMeta) stack.getItemMeta();
                 if (this.lootFile.getString("loot." + loot + ".author") != null) {
                     String author = this.lootFile.getString("loot." + loot + ".author");
-                    author = ChatColor.translateAlternateColorCodes('&', author);
+                    author = LegacyText.color(author);
                     bMeta.setAuthor(author);
                 }
                 if (this.lootFile.getString("loot." + loot + ".title") != null) {
                     String title = this.lootFile.getString("loot." + loot + ".title");
-                    title = ChatColor.translateAlternateColorCodes('&', title);
+                    title = LegacyText.color(title);
                     bMeta.setTitle(title);
                 }
                 if (this.lootFile.getString("loot." + loot + ".pages") != null) {
                     for (String i : this.lootFile.getConfigurationSection("loot." + loot + ".pages").getKeys(false)) {
                         String page = this.lootFile.getString("loot." + loot + ".pages." + i);
-                        page = ChatColor.translateAlternateColorCodes('&', page);
-                        bMeta.addPage(page);
+                        page = LegacyText.color(page);
+                        bMeta.addPages(LegacyText.toComponent(page));
                     }
                 }
                 stack.setItemMeta(bMeta);
@@ -924,7 +923,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     }
     
     private String prosessLootName(String name, ItemStack stack) {
-        name = ChatColor.translateAlternateColorCodes('&', name);
+        name = LegacyText.color(name);
         String itemName = stack.getType().name();
         itemName = itemName.replace("_", " ");
         itemName = itemName.toLowerCase();
@@ -1242,7 +1241,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                                 for (Map.Entry<Integer, ItemStack> hm : itemMap.entrySet()) {
                                     ItemStack check = hm.getValue();
                                     try {
-                                        if ((neededItem.getItemMeta() == null) || (check.getItemMeta().getDisplayName().equals(neededItem.getItemMeta().getDisplayName()))) {
+                                        if ((neededItem.getItemMeta() == null) || (LegacyText.displayName(check.getItemMeta()).equals(LegacyText.displayName(neededItem.getItemMeta())))) {
                                             if (check.getType().equals(neededItem.getType())) {
                                                 //if ((neededItem.getType().getMaxDurability() > 0) || ((Damageable)check).getDamage() == (((Damageable)neededItem).getDamage())) {
                                                     if (!isArmor(neededItem) || hm.getKey() >= 100)
@@ -1357,7 +1356,7 @@ fertileList.remove(p);
                         for (int neededItemIndex : lootFile.getIntegerList("potionEffects." + i + ".requiredItems")) {
                             ItemStack neededItem = getItem(neededItemIndex);
                             try {
-                                if ((neededItem.getItemMeta() == null) || (itemUsed.getItemMeta().getDisplayName().equals(neededItem.getItemMeta().getDisplayName()))) {
+                                if ((neededItem.getItemMeta() == null) || (LegacyText.displayName(itemUsed.getItemMeta()).equals(LegacyText.displayName(neededItem.getItemMeta())))) {
                                     if (itemUsed.getType().equals(neededItem.getType())) {
                                         //if ((neededItem.getType().getMaxDurability() > 0) || (itemUsed.getDurability() == (neededItem.getDurability()))) {
                                             //Player Using Item
@@ -1381,7 +1380,7 @@ fertileList.remove(p);
                             ItemStack neededItem = getItem(neededItemIndex);
                             for (ItemStack check : items) {
                                 try {
-                                    if ((neededItem.getItemMeta() == null) || (check.getItemMeta().getDisplayName().equals(neededItem.getItemMeta().getDisplayName()))) {
+                                    if ((neededItem.getItemMeta() == null) || (LegacyText.displayName(check.getItemMeta()).equals(LegacyText.displayName(neededItem.getItemMeta())))) {
                                         if (check.getType().equals(neededItem.getType())) {
                                             //if ((neededItem.getType().getMaxDurability() > 0) || (check.getDurability() == (neededItem.getDurability()))) {
                                                 if (!itemsPlayerHas.contains(neededItem)) {
@@ -2378,9 +2377,9 @@ Bukkit.addRecipe(sr);
      ItemStack item = new ItemStack(mat, amount);
      ItemMeta m = item.getItemMeta();
      if(name != null)
-     m.setDisplayName(name);
+     m.displayName(LegacyText.toItemComponent(name));
      if(loreList != null)
-     m.setLore(loreList);
+     m.lore(LegacyText.toItemComponents(loreList));
      item.setItemMeta(m);
       return item;
     }
@@ -2631,7 +2630,7 @@ Bukkit.addRecipe(sr);
                                     if (id != -1) {
                                         removeMob(id);
                                         if(e instanceof LivingEntity) {
-                                         ((LivingEntity)e).setCustomName(null);
+                                         ((LivingEntity)e).customName(null);
                                         }
                                         this.getLogger().log(Level.INFO, "Entity remove due to /killall");
                                         e.remove();

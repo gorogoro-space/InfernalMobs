@@ -46,7 +46,7 @@ public class EventListener implements Listener {
     	Player p = e.getPlayer();
     	try {
     		ItemStack s = plugin.getDiviningStaff();
-    		if(p.getInventory().getItemInMainHand().getItemMeta().getDisplayName().equals(s.getItemMeta().getDisplayName())) {
+    		if(LegacyText.displayName(p.getInventory().getItemInMainHand().getItemMeta()).equals(LegacyText.displayName(s.getItemMeta()))) {
     	        Entity b = GUI.getNearbyBoss(p);
     	        //System.out.println("GB");
     	        //Make Look At
@@ -149,7 +149,7 @@ public class EventListener implements Listener {
             for (String id : lootFile.getConfigurationSection("consumeEffects").getKeys(false))
                 if (lootFile.getString("consumeEffects." + id + ".requiredItem") != null) {
                 	ItemStack neededItem = plugin.getItem(lootFile.getInt("consumeEffects." + id + ".requiredItem"));
-                    if ((neededItem.getItemMeta() != null) && (check.getItemMeta().getDisplayName().equals(neededItem.getItemMeta().getDisplayName()))) 
+                    if ((neededItem.getItemMeta() != null) && (LegacyText.displayName(check.getItemMeta()).equals(LegacyText.displayName(neededItem.getItemMeta())))) 
                     	if (check.getType().equals(neededItem.getType()))
                     		plugin.applyEatEffects(p, Integer.parseInt(id));
                 }
@@ -165,7 +165,7 @@ public class EventListener implements Listener {
 
             String name = "";
             try {
-                name = ent.getCustomName();
+                name = LegacyText.toLegacy(ent.customName());
             } catch (Exception ignored) {
             }
             p.sendMessage("§eName: §f" + name);
@@ -221,7 +221,7 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onChunkLoad(ChunkLoadEvent e) {
         for (Entity ent : e.getChunk().getEntities()) {
-            if (((ent instanceof LivingEntity)) && (ent.getCustomName() != null) && (plugin.mobSaveFile.getString(ent.getUniqueId().toString()) != null)) {
+            if (((ent instanceof LivingEntity)) && (ent.customName() != null) && (plugin.mobSaveFile.getString(ent.getUniqueId().toString()) != null)) {
                 plugin.giveMobPowers(ent);
             }
         }
@@ -293,7 +293,7 @@ public class EventListener implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onMobSpawn(CreatureSpawnEvent event) {
         World world = event.getEntity().getWorld();
-        if ((!event.getEntity().hasMetadata("NPC")) && (!event.getEntity().hasMetadata("shopkeeper")) && event.getEntity().getCustomName() == null) {
+        if ((!event.getEntity().hasMetadata("NPC")) && (!event.getEntity().hasMetadata("shopkeeper")) && event.getEntity().customName() == null) {
         	if(event.getEntity().getType().equals(EntityType.ENDER_DRAGON))
         		plugin.getLogger().log(Level.INFO, "Detected Entity Spawn: Ender Dragon");
             if (event.getSpawnReason().equals(CreatureSpawnEvent.SpawnReason.SPAWNER)) {

@@ -66,6 +66,7 @@
   - loot.yml: 効果名(`potionEffects.*.potion`、`consumeEffects.*.potionEffects`。`INCREASE_DAMAGE`→`STRENGTH` など 1.20.5 の改名)、ポーションの種類(`loot.*.potion`。`HEAL`→`HEALING` など)、アイテム名(`loot.*.item`。`WOOD_SWORD`→`WOODEN_SWORD` など)、エンチャント名(`loot.*.enchantments.*.enchantment`。`DAMAGE_ALL`→`SHARPNESS` など昔の Bukkit 名)
   - 有効かどうかは、実際にその値を読み込む処理と同じ方法で判定する(例: アイテムは `Material.valueOf`、効果は `infernal_mobs.getEffectType`)
 - **`setloot` で保存するポーション**: `PotionType` の名前で保存する(読み込み側の `PotionType.valueOf` と合わせた)
+- **戦利品の名前・説明文**: 斜体にせずに表示する(原作は色コードのない部分だけ斜体だった)
 - **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)
 
@@ -88,4 +89,5 @@
 - `LevelledEnchantment.java`: 戦利品のエンチャント(エンチャントとレベルの組)
 - `VersionsHelper.java`: 最大体力の取得・設定
 - `LegacyConfigConverter.java`: 1.21 未満の config.yml / loot.yml の古い名前を自動で変換する
+- `LegacyText.java`: 原作の § 付き文字列と Adventure の Component の変換(推奨されない ChatColor・setDisplayName などの代わり)。アイテム名の比較は § 付き文字列に戻して行う(更新前に作られたアイテムとも一致させるため)
 - `src/main/resources/`: `plugin.yml`、`config.yml`、`loot.yml`、`save.yml`

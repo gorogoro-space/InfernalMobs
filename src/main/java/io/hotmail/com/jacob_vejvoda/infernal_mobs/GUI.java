@@ -228,7 +228,7 @@ public class GUI implements Listener {
             //System.out.println("SN1 " + ent);
             if (plugin.getConfig().getInt("nameTagsLevel") != 0) {
                 String tittle = getMobNameTag(ent);
-                ent.setCustomName(tittle);
+                ent.customName(LegacyText.toComponent(tittle));
                 if (plugin.getConfig().getInt("nameTagsLevel") == 2) {
                     ent.setCustomNameVisible(true);
                 }
