@@ -68,6 +68,7 @@
 - **`setloot` の保存形式**: 読み込み側(`getItem`)で読める形で保存する。ポーションは `PotionType` の名前(`PotionType.valueOf` に合わせる)、エンチャントは `sharpness` のような名前だけ(`NamespacedKey.minecraft` に合わせる)、耐久値は ItemMeta から読む。名前のないアイテムでは `name` を、持ち主のない頭では `owner` を保存しない(原作は耐久値の読み取りで ClassCastException になり、常に失敗していた)。すでにある番号に保存するときは、アイテムの中身に関する項目(`SETLOOT_ITEM_KEYS` と `lore0`〜)を先に消し、落とす条件(`mobs`、`powersMin` / `powersMax`、`chancePercentage`、`commands`)は残す
 - **戦利品の名前・説明文**: 斜体にせずに表示する(原作は色コードのない部分だけ斜体だった)
 - **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
+- **盾の戦利品**: `patterns` を省略すると模様のない盾になる(原作は `setPatterns(null)` で例外になり、落ちなかった)。`colour` は必要
 - **撃破メッセージの `weapon`**: 武器に名前があればその名前、なければ種類名(`diamond sword` など)、素手なら `fist`(原作は名前のない武器だと空文字になっていた)
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)
 

@@ -262,7 +262,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         String entName = e.getType().name();
         if ((!e.hasMetadata("NPC")) && (!e.hasMetadata("shopkeeper"))) {
             if (!fixed) {
-                ArrayList<String> babyList = (ArrayList) getConfig().getList("disabledBabyMobs", new ArrayList<>());
+                List<String> babyList = getConfig().getStringList("disabledBabyMobs");
                 if (e instanceof Ageable) {
                     Ageable age = (Ageable) e;
                     boolean baby = !age.isAdult();
@@ -319,7 +319,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                         infernal_mobs.this.addHealth(e, aList);
                         if (infernal_mobs.this.getConfig().getBoolean("enableSpawnMessages")) {
                             if (infernal_mobs.this.getConfig().getList("spawnMessages") != null) {
-                                ArrayList<String> spawnMessageList = (ArrayList) infernal_mobs.this.getConfig().getList("spawnMessages");
+                                List<String> spawnMessageList = infernal_mobs.this.getConfig().getStringList("spawnMessages");
                                 Random randomGenerator = new Random();
                                 int index = randomGenerator.nextInt(spawnMessageList.size());
                                 String spawnMessage = spawnMessageList.get(index);
@@ -582,7 +582,22 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     		return Material.STICK;
     	}
     }
-    
+
+    // loot.yml の patterns から模様(Pattern)だけを取り出す。書かれていなければ空のリスト
+    // (盾で patterns を省略すると setPatterns(null) で例外になり、戦利品が落ちなかった)
+    private List<Pattern> getLootPatterns(int loot) {
+        List<Pattern> patterns = new ArrayList<>();
+        List<?> list = lootFile.getList("loot." + loot + ".patterns");
+        if (list != null) {
+            for (Object o : list) {
+                if (o instanceof Pattern pattern) {
+                    patterns.add(pattern);
+                }
+            }
+        }
+        return patterns;
+    }
+
     public ItemStack getItem(int loot) {
         //System.out.println("Get Loot: " + loot);
         try {
@@ -680,7 +695,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             //Banners
             if (stack.getType().toString().contains("BANNER")) {
                 BannerMeta b = (BannerMeta) stack.getItemMeta();
-                List<Pattern> patList = (List<Pattern>) lootFile.getList("loot." + loot + ".patterns");
+                List<Pattern> patList = getLootPatterns(loot);
                 if (patList != null && (!patList.isEmpty()))
                     b.setPatterns(patList);
                 stack.setItemMeta(b);
@@ -690,7 +705,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 ItemMeta im = stack.getItemMeta();
                 BlockStateMeta bmeta = (BlockStateMeta) im;
                 Banner b = (Banner) bmeta.getBlockState();
-                List<Pattern> patList = (List<Pattern>) lootFile.getList("loot." + loot + ".patterns");
+                List<Pattern> patList = getLootPatterns(loot);
                 b.setBaseColor(DyeColor.valueOf(lootFile.getString("loot." + loot + ".colour")));
                 b.setPatterns(patList);
                 b.update();
@@ -1242,7 +1257,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
             World world = p.getWorld();
             if (getConfig().getStringList("effectworlds").contains(world.getName()) || (getConfig().getStringList("effectworlds").contains("<all>"))) {
                 HashMap<Integer, ItemStack> itemMap = new HashMap<>();
-                for (int i : (ArrayList<Integer>) getConfig().getList("enabledCharmSlots", new ArrayList<>())) {
+                for (int i : getConfig().getIntegerList("enabledCharmSlots")) {
                     ItemStack in;
                     in = p.getInventory().getItem(i);
                     itemMap.put(i, in);
@@ -1307,7 +1322,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     }
    
     public void applyEatEffects(LivingEntity e, int effectID) {
-     for(String s : (ArrayList<String>)this.lootFile.getList("consumeEffects." + effectID + ".potionEffects")) {
+     for(String s : this.lootFile.getStringList("consumeEffects." + effectID + ".potionEffects")) {
      String[] split = s.split(":");
      String name = split[0];
      int level = Integer.parseInt(split[1]);
@@ -2423,7 +2438,7 @@ Bukkit.addRecipe(sr);
                         return true;
                     }
                     if(args[0].equalsIgnoreCase("slotTest")) {
-                     for(int i : (ArrayList<Integer>)getConfig().getList("enabledCharmSlots"))
+                     for(int i : getConfig().getIntegerList("enabledCharmSlots"))
                      player.getInventory().setItem(i, new ItemStack(Material.RED_STAINED_GLASS_PANE));
                     } else if ((args.length == 1) && (args[0].equalsIgnoreCase("reload"))) {
                         reloadConfig();
