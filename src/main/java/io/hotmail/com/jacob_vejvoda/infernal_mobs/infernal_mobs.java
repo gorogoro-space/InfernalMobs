@@ -818,7 +818,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     // setloot で上書きする前に消す、アイテムの中身に関する項目(lore0〜 のような番号付きの説明文も消す)。
     // mobs、powersMin / powersMax、chancePercentage、commands など、落とす条件の項目は残す
     private static final Set<String> SETLOOT_ITEM_KEYS = Set.of("item", "amount", "durability", "name", "lore", "minLore", "maxLore",
-            "enchantments", "minEnchantments", "maxEnchantments", "author", "title", "pages", "patterns", "colour", "potion", "owner", "flags");
+            "enchantments", "minEnchantments", "maxEnchantments", "unbreaking", "author", "title", "pages", "patterns", "colour", "potion", "owner", "flags");
 
 	private void setItem(ItemStack s, String path, FileConfiguration fc) {
         if (s != null) {
