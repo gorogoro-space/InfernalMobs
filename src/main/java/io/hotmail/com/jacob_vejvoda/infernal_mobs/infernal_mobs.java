@@ -86,7 +86,6 @@ import org.bukkit.potion.PotionType;
 import org.bukkit.util.BlockIterator;
 import org.bukkit.util.Vector;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
 public class infernal_mobs extends JavaPlugin implements Listener {
     GUI gui;
     VersionsHelper versionsHelper;

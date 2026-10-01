@@ -351,7 +351,6 @@ public class EventListener implements Listener {
         }
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityDeath(EntityDeathEvent event) {
         try {
