@@ -1716,8 +1716,11 @@ fertileList.remove(p);
                         if ((ability.equals("webber")) && (isLegitVictim(atc, playerIsVictom, ability))) {
                             if ((randomNum >= 8) || (randomNum == 1)) {
                                 Location feet = vic.getLocation();
-                                feet.getBlock().setType(Material.COBWEB);
-                                setAir(feet, 60);
+                                // 足元が空気のときだけ置く(原作はドアや看板なども上書きし、60 秒後に空気にして消していた)
+                                if (feet.getBlock().getType().isAir()) {
+                                    feet.getBlock().setType(Material.COBWEB);
+                                    setAir(feet, 60);
+                                }
                                 int rNum = new Random().nextInt(max - min) + min;
                                 if ((rNum == 5) && (
                                         (atc.getType().equals(EntityType.SPIDER)) || (atc.getType().equals(EntityType.CAVE_SPIDER)))) {
