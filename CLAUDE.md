@@ -49,6 +49,7 @@
 
 ### データの保存
 - 設定とデータは `plugins/InfernalMobs/` の `config.yml`、`loot.yml`、`save.yml`(Infernal Mob の UUID と能力。チャンク読み込み時にここを見て能力を付け直す)
+- save.yml は 30 秒ごとにまとめて非同期で保存する(書き込み中は `save.yml.tmp` を使う)
 - 自動変換で書き換える前の控え: `config.yml.pre1.21.bak` / `loot.yml.pre1.21.bak`(すでにあれば日時付きの名前)
 - プラグインフォルダ以外には何も書き込まない
 
@@ -71,6 +72,8 @@
 - **盾の戦利品**: `ShieldMeta` で色と模様を読み書きする。`colour` を省略すると色のない普通の盾、`patterns` を省略すると模様なし。`setloot` は色のない盾では `colour` を書かない(原作は旗を経由していたため、色なしを表せず白い盾になり、`colour` か `patterns` がないと例外で落ちなかった)
 - **撃破メッセージの `weapon`**: 武器に名前があればその名前、なければ種類名(`diamond sword` など)、素手なら `fist`(原作は名前のない武器だと空文字になっていた)
 - **ボスバー・スコアボード**: 26 ブロック以内で最も近い Infernal Mob 1 体を表示する(`GUI.getNearbyBoss`)。表示する MOB が変わったら前のバーから外す。ダメージ時の更新は次の tick に行い(体力に反映された後の値を出すため)、同じ tick の更新は 1 回にまとめる。ほかに 1 秒ごとの定期更新(`scoreCheck`)がある(原作は最初に見つかった MOB を表示し、バーが重なったり 1 撃遅れたりしていた)
+- **save.yml の保存**: 出現・撃破・スポナーの設定などでは、メモリ上の `mobSaveFile` を書き換えて `markMobSaveDirty()` を呼ぶだけにする。30 秒ごとの定期タスク(`flushMobSaveFile`)が、変更があるときだけメインスレッドで中身を写し取り、YAML への変換と書き込みは非同期で行う(`save.yml.tmp` に書いてから置き換える。古い内容で上書きしないよう順番の番号で判定)。停止時(`onDisable`)は同期で保存する。`mobSaveFile.save` を直接呼ばないこと(原作は出現・撃破のたびにメインスレッドで全体を保存し、save.yml が大きいと 1 秒近く止まっていた)
+- **消えた Infernal Mob の後始末**: `EntityRemoveEvent` で、チャンクの解放(`UNLOAD`)とプレイヤーの退出(`PLAYER_QUIT`)以外の理由で消えた Infernal Mob を、`infernalList` と save.yml から消す(`forgetMob`)。原作は自然消滅や他プラグインによる削除で消えた MOB の行が残り続け、save.yml が大きくなり続けていた。すでに残っている古い行は消さない(未読み込みのチャンクにいる MOB と区別できないため)
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)
 
 ## 過去にハマった点・注意点

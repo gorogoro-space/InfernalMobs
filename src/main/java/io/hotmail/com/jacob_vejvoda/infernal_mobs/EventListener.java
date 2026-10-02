@@ -14,6 +14,7 @@ import org.bukkit.event.entity.EntityBreedEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRemoveEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -261,6 +262,17 @@ public class EventListener implements Listener {
         }
     }
 
+    // 自然消滅・プラグインによる削除などで消えた Infernal Mob を一覧と save.yml から消す(消さないと save.yml が大きくなり続ける)。
+    // チャンクの解放とプレイヤーの退出では、あとで戻ってくるので消さない
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onEntityRemove(EntityRemoveEvent e) {
+        EntityRemoveEvent.Cause cause = e.getCause();
+        if (cause == EntityRemoveEvent.Cause.UNLOAD || cause == EntityRemoveEvent.Cause.PLAYER_QUIT) {
+            return;
+        }
+        plugin.forgetMob(e.getEntity().getUniqueId());
+    }
+
     @EventHandler(priority = EventPriority.HIGH)
     public void onEntityAttack(EntityDamageByEntityEvent event) {
         try {
@@ -360,7 +372,7 @@ public class EventListener implements Listener {
             String name = plugin.getLocationName(e.getBlock().getLocation());
             if (plugin.mobSaveFile.getString("infernalSpanwers." + name) != null) {
                 plugin.mobSaveFile.set("infernalSpanwers." + name, null);
-                plugin.mobSaveFile.save(plugin.saveYML);
+                plugin.markMobSaveDirty();
                 if (e.getPlayer().isOp()) {
                     e.getPlayer().sendMessage("§cYou broke an infernal mob spawner!");
                 }

@@ -2,6 +2,10 @@ package io.hotmail.com.jacob_vejvoda.infernal_mobs;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -104,7 +108,13 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     ArrayList<Player> errorList = new ArrayList<>();
     ArrayList<Player> levitateList = new ArrayList<>();
     public ArrayList<Player> fertileList = new ArrayList<>();
-    
+    // save.yml に未保存の変更があるか(メインスレッドだけで読み書きする)
+    private boolean saveDirty = false;
+    // save.yml の書き込みの順番(古い内容で新しい内容を上書きしないように)
+    private long saveSeq = 0;
+    private long savedSeq = 0;
+    private final Object saveLock = new Object();
+
     public void onEnable() {
         this.lootYML = new File(getDataFolder(), "loot.yml");
         this.saveYML = new File(getDataFolder(), "save.yml");
@@ -178,8 +188,66 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         reloadPowers();
         showEffect();
         addRecipes();
+        // save.yml の変更は 30 秒ごとにまとめて保存する(出現・撃破のたびに保存すると TPS が下がるため)
+        Bukkit.getScheduler().runTaskTimer(this, this::flushMobSaveFile, 600L, 600L);
 
         getLogger().info("InfernalMobs enabled successfully for " + Bukkit.getBukkitVersion() + "!");
+    }
+
+    @Override
+    public void onDisable() {
+        // 停止時は残りの変更を同期で保存する
+        if (this.saveDirty) {
+            this.saveDirty = false;
+            writeMobSaveFile(snapshotMobSaveFile(), ++this.saveSeq);
+        }
+    }
+
+    // save.yml に変更があったことを記録する(実際の保存は flushMobSaveFile で行う)
+    void markMobSaveDirty() {
+        this.saveDirty = true;
+    }
+
+    // 変更があれば、メインスレッドで中身を写し取り、YAML への変換と書き込みは非同期で行う
+    private void flushMobSaveFile() {
+        if (!this.saveDirty) {
+            return;
+        }
+        this.saveDirty = false;
+        final YamlConfiguration copy = snapshotMobSaveFile();
+        final long seq = ++this.saveSeq;
+        Bukkit.getScheduler().runTaskAsynchronously(this, () -> writeMobSaveFile(copy, seq));
+    }
+
+    private YamlConfiguration snapshotMobSaveFile() {
+        YamlConfiguration copy = new YamlConfiguration();
+        for (Map.Entry<String, Object> entry : this.mobSaveFile.getValues(true).entrySet()) {
+            if (!(entry.getValue() instanceof ConfigurationSection)) {
+                copy.set(entry.getKey(), entry.getValue());
+            }
+        }
+        return copy;
+    }
+
+    // 一時ファイルに書いてから置き換える(書き込み中に落ちても save.yml が壊れないように)
+    private void writeMobSaveFile(YamlConfiguration copy, long seq) {
+        synchronized (this.saveLock) {
+            if (seq <= this.savedSeq) {
+                return;
+            }
+            try {
+                File tmp = new File(getDataFolder(), "save.yml.tmp");
+                Files.writeString(tmp.toPath(), copy.saveToString(), StandardCharsets.UTF_8);
+                try {
+                    Files.move(tmp.toPath(), this.saveYML.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+                } catch (AtomicMoveNotSupportedException e) {
+                    Files.move(tmp.toPath(), this.saveYML.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                }
+                this.savedSeq = seq;
+            } catch (IOException | RuntimeException e) {
+                getLogger().log(Level.SEVERE, "Failed to save save.yml", e);
+            }
+        }
     }
 
     private void reloadPowers() {
@@ -391,11 +459,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
         String list = getPowerString(ent, powerList);
         this.infernalMetadata.put(ent.getUniqueId(), list);
-        try {
-            this.mobSaveFile.set(ent.getUniqueId().toString(), list);
-            this.mobSaveFile.save(this.saveYML);
-        } catch (IOException ignored) {
-        }
+        this.mobSaveFile.set(ent.getUniqueId().toString(), list);
+        markMobSaveDirty();
     }
     
     private String getPowerString(Entity ent, List<String> powerList) {
@@ -415,7 +480,25 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         this.infernalList.remove(mobIndex);
         this.infernalMetadata.remove(UUID.fromString(id));
         this.mobSaveFile.set(id, null);
-        this.mobSaveFile.save(this.saveYML);
+        markMobSaveDirty();
+    }
+
+    // チャンクの解放以外で消えた Infernal Mob を、一覧と save.yml から消す
+    void forgetMob(UUID id) {
+        String key = id.toString();
+        boolean saved = this.mobSaveFile.contains(key);
+        if (!saved && !this.infernalMetadata.containsKey(id)) {
+            return;
+        }
+        int mobIndex = idSearch(id);
+        if (mobIndex != -1) {
+            this.infernalList.remove(mobIndex);
+        }
+        this.infernalMetadata.remove(id);
+        if (saved) {
+            this.mobSaveFile.set(key, null);
+            markMobSaveDirty();
+        }
     }
     
     void spawnGhost(Location l) {
@@ -2634,7 +2717,7 @@ Bukkit.addRecipe(sr);
                                 int delay = Integer.parseInt(args[1]);
                                 String name = getLocationName(player.getTargetBlock(null, 25).getLocation());
                                 this.mobSaveFile.set("infernalSpanwers." + name, delay);
-                                this.mobSaveFile.save(this.saveYML);
+                                markMobSaveDirty();
                                 sender.sendMessage("§cSpawner set to infernal with a " + delay + " second delay!");
                             } else {
                                 sender.sendMessage("§cYou must be looking a spawner to make it infernal!");
