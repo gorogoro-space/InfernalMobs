@@ -30,17 +30,20 @@ public class GUI implements Listener {
     }
     
     public static Entity getNearbyBoss(Player p) {
-        double dis = 26.0D;
+        // 26 ブロック以内で最も近い MOB を返す(原作は最初に見つかった MOB を返していた)
+        double dis = 26.0D * 26.0D;
+        Entity nearest = null;
         for (InfernalMob m : plugin.infernalList) {
             if (m.entity.getWorld().equals(p.getWorld())) {
                 Entity boss = m.entity;
-                if (p.getLocation().distance(boss.getLocation()) < dis) {
-                    dis = p.getLocation().distance(boss.getLocation());
-                    return boss;
+                double d = p.getLocation().distanceSquared(boss.getLocation());
+                if (d < dis) {
+                    dis = d;
+                    nearest = boss;
                 }
             }
         }
-        return null;
+        return nearest;
     }
 
     static void fixBar(Player p) {
@@ -126,6 +129,10 @@ public class GUI implements Listener {
             bar.setVisible(true);
             bossBars.put(e, bar);
         }
+        // ほかの MOB のバーからは外す(表示する MOB が切り替わったときにバーが重ならないように)
+        for (Entry<Entity, Object> hm : bossBars.entrySet())
+            if (!hm.getKey().equals(e) && ((BossBar) hm.getValue()).getPlayers().contains(p))
+                ((BossBar) hm.getValue()).removePlayer(p);
         if (!((BossBar) bossBars.get(e)).getPlayers().contains(p))
             ((BossBar) bossBars.get(e)).addPlayer(p);
         float health = (float) ((Damageable) e).getHealth();

@@ -70,6 +70,7 @@
 - **コマンド**: `/infernalmobs`(別名 `/im`、権限 `infernal_mobs.commands`)。`reload`、`spawn` / `cspawn` / `pspawn`、`kill` / `killall`、`getloot` / `setloot` / `giveloot`、`setInfernal`、`abilities` / `showAbilities`、`mobs` / `mobList`、`info` / `worldInfo`、`help` など
 - **盾の戦利品**: `ShieldMeta` で色と模様を読み書きする。`colour` を省略すると色のない普通の盾、`patterns` を省略すると模様なし。`setloot` は色のない盾では `colour` を書かない(原作は旗を経由していたため、色なしを表せず白い盾になり、`colour` か `patterns` がないと例外で落ちなかった)
 - **撃破メッセージの `weapon`**: 武器に名前があればその名前、なければ種類名(`diamond sword` など)、素手なら `fist`(原作は名前のない武器だと空文字になっていた)
+- **ボスバー・スコアボード**: 26 ブロック以内で最も近い Infernal Mob 1 体を表示する(`GUI.getNearbyBoss`)。表示する MOB が変わったら前のバーから外す。ダメージ時の更新は次の tick に行い(体力に反映された後の値を出すため)、同じ tick の更新は 1 回にまとめる。ほかに 1 秒ごとの定期更新(`scoreCheck`)がある(原作は最初に見つかった MOB を表示し、バーが重なったり 1 撃遅れたりしていた)
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)
 
 ## 過去にハマった点・注意点

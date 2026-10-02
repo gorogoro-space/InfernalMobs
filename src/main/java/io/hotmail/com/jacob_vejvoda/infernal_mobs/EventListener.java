@@ -29,14 +29,18 @@ import org.bukkit.util.Vector;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
 public class EventListener implements Listener {
     private static infernal_mobs plugin;
     private HashMap<String, Long> spawnerMap = new HashMap<>();
+    // 次の tick にボスバーを更新するプレイヤー
+    private final Set<Player> barUpdatePlayers = new HashSet<>();
 
     EventListener(infernal_mobs instance) {
         plugin = instance;
@@ -180,12 +184,31 @@ public class EventListener implements Listener {
     public void onEnitityDamaged(EntityDamageEvent e) {
         Entity mob = e.getEntity();
         if (plugin.idSearch(mob.getUniqueId()) != -1) {
-            for (Entity entity : mob.getNearbyEntities(64.0D, 64.0D, 64.0D)) {
-                if ((entity instanceof Player)) {
-                    GUI.fixBar((Player) entity);
-                }
+            scheduleBarUpdate(mob);
+        }
+    }
+
+    // ボスバーは、ダメージが体力に反映された後(次の tick)に更新する。
+    // 同じ tick に何度ダメージがあっても、更新は 1 回にまとめる
+    private void scheduleBarUpdate(Entity mob) {
+        boolean scheduled = !barUpdatePlayers.isEmpty();
+        for (Entity entity : mob.getNearbyEntities(64.0D, 64.0D, 64.0D)) {
+            if ((entity instanceof Player)) {
+                barUpdatePlayers.add((Player) entity);
             }
         }
+        if (scheduled || barUpdatePlayers.isEmpty()) {
+            return;
+        }
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            List<Player> players = new ArrayList<>(barUpdatePlayers);
+            barUpdatePlayers.clear();
+            for (Player p : players) {
+                if (p.isOnline()) {
+                    GUI.fixBar(p);
+                }
+            }
+        });
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -277,13 +300,7 @@ public class EventListener implements Listener {
                 mob = attacker;
                 plugin.doEffect(player, mob, true);
             }
-            if (plugin.idSearch(victim.getUniqueId()) != -1) {
-                for (Entity entity : victim.getNearbyEntities(64.0D, 64.0D, 64.0D)) {
-                    if ((entity instanceof Player)) {
-                        GUI.fixBar((Player) entity);
-                    }
-                }
-            }
+            // ボスバーの更新は onEnitityDamaged で行う(EntityDamageByEntityEvent でも呼ばれるため)
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, e.getMessage());
             e.printStackTrace();

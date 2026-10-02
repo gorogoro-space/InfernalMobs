@@ -126,7 +126,7 @@
 | `levelPrefixs` | (なし) | 能力の数ごとの前置き。例: `'5': '&fGiant'` |
 | `nameTagsLevel` | `1` | 頭上の名前の表示。`0` は表示しない、`1` は見ているときだけ、`2` は常に表示。`0` にするとサーバーの再起動で Infernal Mob が普通の MOB に戻ります |
 | `nameTagsName` | `&f<prefix> <mobName>` | 頭上の名前の書式 |
-| `enableBossBar` | `true` | 近くの Infernal Mob の体力をボスバーで表示するか |
+| `enableBossBar` | `true` | 近くの Infernal Mob の体力をボスバーで表示するか(26 ブロック以内で最も近い 1 体を表示します) |
 | `bossBarsName` | `&fLevel <mobLevel> &f<prefix> <mobName>` | ボスバーの書式 |
 | `bossBarSettings` | `PINK` / `SOLID` | ボスバーの色(`defaultColor`)と形(`defaultStyle`)。`perMob`(MOB ごと)と `perLevel`(能力の数ごと)で個別に変えられます |
 | `enableScoreBoard` | `false` | 近くの Infernal Mob の能力をサイドバーに表示するか |
