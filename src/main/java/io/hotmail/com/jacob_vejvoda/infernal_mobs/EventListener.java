@@ -285,7 +285,7 @@ public class EventListener implements Listener {
                     mob = victim;
                     Player player = (Player) arrow.getShooter();
                     plugin.doEffect(player, mob, false);
-                } else if ((!(arrow.getShooter() instanceof Player)) && ((victim instanceof Player))) {
+                } else if ((arrow.getShooter() instanceof Entity) && (!(arrow.getShooter() instanceof Player)) && ((victim instanceof Player))) {
                     mob = (Entity) arrow.getShooter();
                     Player player = (Player) victim;
                     plugin.doEffect(player, mob, true);
@@ -297,7 +297,7 @@ public class EventListener implements Listener {
                         mob = victim;
                         Player player = (Player) snowBall.getShooter();
                         plugin.doEffect(player, mob, false);
-                    } else if ((!(snowBall.getShooter() instanceof Player)) && ((victim instanceof Player))) {
+                    } else if ((snowBall.getShooter() instanceof Entity) && (!(snowBall.getShooter() instanceof Player)) && ((victim instanceof Player))) {
                         mob = (Entity) snowBall.getShooter();
                         Player player = (Player) victim;
                         plugin.doEffect(player, mob, true);
