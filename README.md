@@ -281,7 +281,19 @@ IntelliJ IDEA の「アーティファクトのビルド」はクラスファイ
 
 - 置き換える前のファイルは `config.yml.pre1.21.bak` / `loot.yml.pre1.21.bak` として残ります
 - 置き換えた内容はサーバーのログに出ます
-- 自動で置き換えられない名前があった場合は、ログに警告が出ます。その箇所は手で直してください
+- 頭に `LEGACY_` が付いたアイテム名(例: `LEGACY_WOOD_SWORD`)も置き換えます
+- 自動で置き換えられない名前があった場合は、ログに警告が出ます。警告には、ファイルの中の場所と似た名前の候補が表示されます。その名前を正しい名前に書き換えてから `/im reload` を実行してください
+
+  ```
+  [InfernalMobs] loot.yml に、このバージョンの Minecraft では使えない効果の名前があります。この項目は読み込まれません。
+  [InfernalMobs]   potionEffects:
+  [InfernalMobs]     '13':
+  [InfernalMobs]       potion: INSTANT_HEALX   ← ここ
+  [InfernalMobs]   候補: INSTANT_HEALTH, INSTANT_DAMAGE
+  [InfernalMobs]   plugins/InfernalMobs/loot.yml のこの名前を、正しい名前に書き換えてから /im reload を実行してください。
+  ```
+
+  この例では、`loot.yml` の `potionEffects` の `'13'` にある `potion: INSTANT_HEALX` を `potion: INSTANT_HEALTH` に直します。`LEGACY_WOOL` のように、昔は耐久値で色などを分けていたアイテムは自動で置き換えられないので、`WHITE_WOOL` などの名前に直してください
 - 以前のバージョンとは違い、サーバーのバージョンが変わっても `config.yml` は初期化されません
 
 ## 開発(IntelliJ IDEA で Claude Code を使う)

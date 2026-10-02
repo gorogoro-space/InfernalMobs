@@ -62,9 +62,9 @@
 (現在の実装の動作。仕様を変えたらここを更新する)
 
 - **設定ファイルの生成**: `config.yml` / `loot.yml` がなければ jar 内のものを書き出す(1 種類のみ)。サーバーのバージョンが変わっても設定は消さない(古い `configVersion` キーは使っていない)
-- **古い設定ファイルの自動変換**(`LegacyConfigConverter`): 起動時と `/im reload` のときに、今のバージョンで使えない名前だけを変換表で置き換える。何かを置き換えたときだけ、控えを残してから保存し、置き換えた内容をログに出す。変換表にない無効な名前は書き換えずに警告だけ出す。何度実行しても結果は同じ
+- **古い設定ファイルの自動変換**(`LegacyConfigConverter`): 起動時と `/im reload` のときに、今のバージョンで使えない名前だけを変換表で置き換える。何かを置き換えたときだけ、控えを残してから保存し、置き換えた内容をログに出す。変換表にない無効な名前は書き換えずに警告だけ出す(ファイルの中の場所を YAML の形で示し、綴りが近い正しい名前を最大 3 つ候補として出す。候補の計算は警告を出すときだけ)。何度実行しても結果は同じ
   - config.yml: `enabledmobs` / `enabledMounts` / `enabledRiders` / `disabledBabyMobs` と `mobChances` のキーの MOB 名(`PIG_ZOMBIE`→`ZOMBIFIED_PIGLIN`、`MUSHROOM_COW`→`MOOSHROOM`、`SNOWMAN`→`SNOW_GOLEM`)。置き換えで重複したら 1 つにまとめる
-  - loot.yml: 効果名(`potionEffects.*.potion`、`consumeEffects.*.potionEffects`。`INCREASE_DAMAGE`→`STRENGTH` など 1.20.5 の改名)、ポーションの種類(`loot.*.potion`。`HEAL`→`HEALING` など)、アイテム名(`loot.*.item`。`WOOD_SWORD`→`WOODEN_SWORD` など)、エンチャント名(`loot.*.enchantments.*.enchantment`。`DAMAGE_ALL`→`SHARPNESS` など昔の Bukkit 名)
+  - loot.yml: 効果名(`potionEffects.*.potion`、`consumeEffects.*.potionEffects`。`INCREASE_DAMAGE`→`STRENGTH` など 1.20.5 の改名と、ポーションの種類の名前を書いた `INSTANT_HEAL`→`INSTANT_HEALTH`)、ポーションの種類(`loot.*.potion`。`HEAL`→`HEALING` など)、アイテム名(`loot.*.item`。`WOOD_SWORD`→`WOODEN_SWORD` など。頭の `LEGACY_` は外してから変換表で探す)、エンチャント名(`loot.*.enchantments.*.enchantment`。`DAMAGE_ALL`→`SHARPNESS` など昔の Bukkit 名)
   - 有効かどうかは、実際にその値を読み込む処理と同じ方法で判定する(例: アイテムは `Material.valueOf`、効果は `infernal_mobs.getEffectType`)
 - **`setloot` の保存形式**: 読み込み側(`getItem`)で読める形で保存する。ポーションは `PotionType` の名前(`PotionType.valueOf` に合わせる)、エンチャントは `sharpness` のような名前だけ(`NamespacedKey.minecraft` に合わせる)、耐久値は ItemMeta から読む。名前のないアイテムでは `name` を、持ち主のない頭では `owner` を保存しない(原作は耐久値の読み取りで ClassCastException になり、常に失敗していた)。すでにある番号に保存するときは、アイテムの中身に関する項目(`SETLOOT_ITEM_KEYS` と `lore0`〜)を先に消し、落とす条件(`mobs`、`powersMin` / `powersMax`、`chancePercentage`、`commands`)は残す
 - **戦利品の名前・説明文**: 斜体にせずに表示する(原作は色コードのない部分だけ斜体だった)
