@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -110,6 +111,9 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     public ArrayList<Player> fertileList = new ArrayList<>();
     // save.yml に未保存の変更があるか(メインスレッドだけで読み書きする)
     private boolean saveDirty = false;
+    // save.yml の値(パスと値。セクションは含まない)。mobSaveFile と同じ内容を持ち、保存のときはこれを写すだけにする
+    // (mobSaveFile.getValues(true) で全体を写すと、save.yml が大きいときにメインスレッドが止まるため)
+    private final LinkedHashMap<String, Object> saveValues = new LinkedHashMap<>();
     // save.yml の書き込みの順番(古い内容で新しい内容を上書きしないように)
     private long saveSeq = 0;
     private long savedSeq = 0;
@@ -120,6 +124,11 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         this.saveYML = new File(getDataFolder(), "save.yml");
         this.lootFile = YamlConfiguration.loadConfiguration(this.lootYML);
         this.mobSaveFile = YamlConfiguration.loadConfiguration(this.saveYML);
+        for (Map.Entry<String, Object> entry : this.mobSaveFile.getValues(true).entrySet()) {
+            if (!(entry.getValue() instanceof ConfigurationSection)) {
+                this.saveValues.put(entry.getKey(), entry.getValue());
+            }
+        }
 
         // Register Events
         getServer().getPluginManager().registerEvents(this, this);
@@ -203,39 +212,44 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
     }
 
-    // save.yml に変更があったことを記録する(実際の保存は flushMobSaveFile で行う)
-    void markMobSaveDirty() {
+    // save.yml の値を変える(value が null なら消す)。mobSaveFile.set を直接呼ばずに必ずこれを使う(saveValues と揃えるため)
+    // 実際の保存は flushMobSaveFile で行う
+    void setMobSave(String path, Object value) {
+        this.mobSaveFile.set(path, value);
+        if (value == null) {
+            this.saveValues.remove(path);
+        } else {
+            this.saveValues.put(path, value);
+        }
         this.saveDirty = true;
     }
 
-    // 変更があれば、メインスレッドで中身を写し取り、YAML への変換と書き込みは非同期で行う
+    // 変更があれば、メインスレッドで値の一覧を写し取り、YAML への変換と書き込みは非同期で行う
     private void flushMobSaveFile() {
         if (!this.saveDirty) {
             return;
         }
         this.saveDirty = false;
-        final YamlConfiguration copy = snapshotMobSaveFile();
+        final LinkedHashMap<String, Object> copy = snapshotMobSaveFile();
         final long seq = ++this.saveSeq;
         Bukkit.getScheduler().runTaskAsynchronously(this, () -> writeMobSaveFile(copy, seq));
     }
 
-    private YamlConfiguration snapshotMobSaveFile() {
-        YamlConfiguration copy = new YamlConfiguration();
-        for (Map.Entry<String, Object> entry : this.mobSaveFile.getValues(true).entrySet()) {
-            if (!(entry.getValue() instanceof ConfigurationSection)) {
-                copy.set(entry.getKey(), entry.getValue());
-            }
-        }
-        return copy;
+    private LinkedHashMap<String, Object> snapshotMobSaveFile() {
+        return new LinkedHashMap<>(this.saveValues);
     }
 
     // 一時ファイルに書いてから置き換える(書き込み中に落ちても save.yml が壊れないように)
-    private void writeMobSaveFile(YamlConfiguration copy, long seq) {
+    private void writeMobSaveFile(Map<String, Object> values, long seq) {
         synchronized (this.saveLock) {
             if (seq <= this.savedSeq) {
                 return;
             }
             try {
+                YamlConfiguration copy = new YamlConfiguration();
+                for (Map.Entry<String, Object> entry : values.entrySet()) {
+                    copy.set(entry.getKey(), entry.getValue());
+                }
                 File tmp = new File(getDataFolder(), "save.yml.tmp");
                 Files.writeString(tmp.toPath(), copy.saveToString(), StandardCharsets.UTF_8);
                 try {
@@ -459,8 +473,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
         String list = getPowerString(ent, powerList);
         this.infernalMetadata.put(ent.getUniqueId(), list);
-        this.mobSaveFile.set(ent.getUniqueId().toString(), list);
-        markMobSaveDirty();
+        setMobSave(ent.getUniqueId().toString(), list);
     }
     
     private String getPowerString(Entity ent, List<String> powerList) {
@@ -479,8 +492,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         String id = this.infernalList.get(mobIndex).id.toString();
         this.infernalList.remove(mobIndex);
         this.infernalMetadata.remove(UUID.fromString(id));
-        this.mobSaveFile.set(id, null);
-        markMobSaveDirty();
+        setMobSave(id, null);
     }
 
     // チャンクの解放以外で消えた Infernal Mob を、一覧と save.yml から消す
@@ -496,8 +508,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
         this.infernalMetadata.remove(id);
         if (saved) {
-            this.mobSaveFile.set(key, null);
-            markMobSaveDirty();
+            setMobSave(key, null);
         }
     }
     
@@ -1331,6 +1342,10 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }, 1L);
     }
     public void applyEffect() {
+        // 必要なアイテムとその名前は、プレイヤーごとに作り直さず、1 回の実行につき 1 度だけ作る(TPS 対策)
+        // 名前は、ItemMeta がなければ null(名前を比べない)
+        HashMap<Integer, ItemStack> neededItems = new HashMap<>();
+        HashMap<Integer, String> neededNames = new HashMap<>();
         //Check Players
         for (Player p : this.getServer().getOnlinePlayers()) {
             World world = p.getWorld();
@@ -1348,16 +1363,29 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                         ai = ai + 1;
                     }
                 //for(int i = 0; i < 256; i++){
-                if (lootFile.getString("potionEffects") != null)
+                if (lootFile.getString("potionEffects") != null) {
+                    // 持ち物の名前も 1 度だけ変換する(アイテムや ItemMeta がなければ null で、どの名前とも一致しない)
+                    HashMap<Integer, String> checkNames = new HashMap<>();
+                    for (Map.Entry<Integer, ItemStack> hm : itemMap.entrySet()) {
+                        ItemMeta checkMeta = (hm.getValue() == null) ? null : hm.getValue().getItemMeta();
+                        checkNames.put(hm.getKey(), (checkMeta == null) ? null : LegacyText.displayName(checkMeta));
+                    }
                     for (String id : lootFile.getConfigurationSection("potionEffects").getKeys(false))
                         if ((lootFile.getString("potionEffects." + id) != null) && (lootFile.getString("potionEffects." + id + ".attackEffect") == null) && (lootFile.getString("potionEffects." + id + ".attackHelpEffect") == null)) {
                             ArrayList<ItemStack> itemsPlayerHas = new ArrayList<ItemStack>();
                             for (int neededItemIndex : lootFile.getIntegerList("potionEffects." + id + ".requiredItems")) {
-                                ItemStack neededItem = getItem(neededItemIndex);
+                                if (!neededItems.containsKey(neededItemIndex)) {
+                                    ItemStack item = getItem(neededItemIndex);
+                                    ItemMeta neededMeta = (item == null) ? null : item.getItemMeta();
+                                    neededItems.put(neededItemIndex, item);
+                                    neededNames.put(neededItemIndex, (neededMeta == null) ? null : LegacyText.displayName(neededMeta));
+                                }
+                                ItemStack neededItem = neededItems.get(neededItemIndex);
+                                String neededName = neededNames.get(neededItemIndex);
                                 for (Map.Entry<Integer, ItemStack> hm : itemMap.entrySet()) {
                                     ItemStack check = hm.getValue();
                                     try {
-                                        if ((neededItem.getItemMeta() == null) || (LegacyText.displayName(check.getItemMeta()).equals(LegacyText.displayName(neededItem.getItemMeta())))) {
+                                        if ((neededName == null) || (neededName.equals(checkNames.get(hm.getKey())))) {
                                             if (check.getType().equals(neededItem.getType())) {
                                                 //if ((neededItem.getType().getMaxDurability() > 0) || ((Damageable)check).getDamage() == (((Damageable)neededItem).getDamage())) {
                                                     if (!isArmor(neededItem) || hm.getKey() >= 100)
@@ -1373,6 +1401,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                                 applyEffects(p, Integer.parseInt(id));
                             }
                         }
+                }
             }
         }
         Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, this::applyEffect, (10 * 20));
@@ -2719,8 +2748,7 @@ Bukkit.addRecipe(sr);
                             if (player.getTargetBlock(null, 25).getType().equals(Material.SPAWNER)) {
                                 int delay = Integer.parseInt(args[1]);
                                 String name = getLocationName(player.getTargetBlock(null, 25).getLocation());
-                                this.mobSaveFile.set("infernalSpanwers." + name, delay);
-                                markMobSaveDirty();
+                                setMobSave("infernalSpanwers." + name, delay);
                                 sender.sendMessage("§cSpawner set to infernal with a " + delay + " second delay!");
                             } else {
                                 sender.sendMessage("§cYou must be looking a spawner to make it infernal!");
