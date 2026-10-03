@@ -84,6 +84,8 @@ import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.ShieldMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
@@ -114,6 +116,11 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     // save.yml の値(パスと値。セクションは含まない)。mobSaveFile と同じ内容を持ち、保存のときはこれを写すだけにする
     // (mobSaveFile.getValues(true) で全体を写すと、save.yml が大きいときにメインスレッドが止まるため)
     private final LinkedHashMap<String, Object> saveValues = new LinkedHashMap<>();
+    // Infernal Mob の能力の文字列を MOB 自身(PersistentDataContainer)に保存するキー。MOB と一緒にワールドのデータに保存される
+    // (save.yml の UUID の行は古い版で作られたもので、MOB が読み込まれたときにこちらへ移して消す)
+    private NamespacedKey abilitiesKey;
+    // save.yml の古い行を消すまでの日数を数え始めた日時(ミリ秒)を、save.yml に記録するキー
+    private static final String LEGACY_CLEANUP_START = "legacyCleanupStart";
     // save.yml の書き込みの順番(古い内容で新しい内容を上書きしないように)
     private long saveSeq = 0;
     private long savedSeq = 0;
@@ -129,6 +136,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 this.saveValues.put(entry.getKey(), entry.getValue());
             }
         }
+        this.abilitiesKey = new NamespacedKey(this, "abilities");
 
         // Register Events
         getServer().getPluginManager().registerEvents(this, this);
@@ -194,6 +202,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
 
         // Set up plugin methods
         applyEffect();
+        cleanupLegacySave();
         reloadPowers();
         showEffect();
         addRecipes();
@@ -264,15 +273,87 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
     }
 
+    // 起動時に、すでに読み込まれている MOB に能力を付け直す(プラグインが有効になる前に読み込まれた MOB には EntitiesLoadEvent が届かないため)。
+    // 以前はオンラインのプレイヤーがいるワールドだけを見ていたので、起動時には何もしていなかった
     private void reloadPowers() {
-        ArrayList<World> wList = new ArrayList<>();
-        for (Player p : getServer().getOnlinePlayers()) {
-            if (!wList.contains(p.getWorld())) {
-                wList.add(p.getWorld());
+        for (World world : getServer().getWorlds()) {
+            giveMobsPowers(world);
+        }
+    }
+
+    // MOB に能力が保存されているか(MOB 自身のデータ、なければ save.yml の古い行)
+    boolean hasSavedPowers(Entity ent) {
+        return ent.getPersistentDataContainer().has(this.abilitiesKey, PersistentDataType.STRING)
+                || this.saveValues.containsKey(ent.getUniqueId().toString());
+    }
+
+    // MOB に保存された能力の文字列(なければ null)。save.yml の古い行しかなければ、MOB 自身のデータへ移して行を消す
+    private String loadSavedPowers(Entity ent) {
+        PersistentDataContainer pdc = ent.getPersistentDataContainer();
+        String powers = pdc.get(this.abilitiesKey, PersistentDataType.STRING);
+        if (powers != null) {
+            return powers;
+        }
+        String key = ent.getUniqueId().toString();
+        Object legacy = this.saveValues.get(key);
+        if (legacy == null) {
+            return null;
+        }
+        powers = legacy.toString();
+        pdc.set(this.abilitiesKey, PersistentDataType.STRING, powers);
+        setMobSave(key, null);
+        return powers;
+    }
+
+    // 表示用(/im error)。移したり消したりはしない
+    String peekSavedPowers(Entity ent) {
+        String powers = ent.getPersistentDataContainer().get(this.abilitiesKey, PersistentDataType.STRING);
+        if (powers != null) {
+            return powers;
+        }
+        Object legacy = this.saveValues.get(ent.getUniqueId().toString());
+        return (legacy == null) ? null : legacy.toString();
+    }
+
+    // save.yml の古い行(UUID と能力)のうち、legacySaveRetentionDays 日たっても MOB へ移されなかったものを消す(起動時だけ)。
+    // 移されないのは、その間に誰も近づかなかった場所の MOB か、すでにいない MOB の行
+    private void cleanupLegacySave() {
+        long now = System.currentTimeMillis();
+        if (!this.saveValues.containsKey(LEGACY_CLEANUP_START)) {
+            setMobSave(LEGACY_CLEANUP_START, now);
+            return;
+        }
+        int days = getConfig().getInt("legacySaveRetentionDays");
+        if (days <= 0) {
+            return;
+        }
+        long start = this.mobSaveFile.getLong(LEGACY_CLEANUP_START);
+        if (now - start < days * 86400000L) {
+            return;
+        }
+        int removed = 0;
+        for (String key : new ArrayList<>(this.saveValues.keySet())) {
+            if (isUuidKey(key)) {
+                setMobSave(key, null);
+                removed++;
             }
         }
-        for (World world : wList) {
-            giveMobsPowers(world);
+        // 古い版に戻して行が増えた場合にも、また同じ日数を待つように数え直す
+        setMobSave(LEGACY_CLEANUP_START, now);
+        if (removed > 0) {
+            getLogger().info("Removed " + removed + " old entries from save.yml (not loaded for " + days + " days).");
+        }
+    }
+
+    private static boolean isUuidKey(String key) {
+        if (key.length() != 36) {
+            return false;
+        }
+        try {
+            UUID.fromString(key);
+            return true;
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 
@@ -302,7 +383,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     
     void giveMobsPowers(World world) {
         for (Entity ent : world.getEntities()) {
-            if (((ent instanceof LivingEntity)) && (this.mobSaveFile.getString(ent.getUniqueId().toString()) != null)) {
+            if (((ent instanceof LivingEntity)) && hasSavedPowers(ent)) {
                 giveMobPowers(ent);
             }
         }
@@ -317,8 +398,9 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                 aList = new ArrayList<>(Arrays.asList(saved.split(",")));
             }
             if (aList == null) {
-                if (this.mobSaveFile.getString(ent.getUniqueId().toString()) != null) {
-                    aList = new ArrayList<>(Arrays.asList(this.mobSaveFile.getString(ent.getUniqueId().toString()).split(",")));
+                String savedPowers = loadSavedPowers(ent);
+                if (savedPowers != null) {
+                    aList = new ArrayList<>(Arrays.asList(savedPowers.split(",")));
                     String list = getPowerString(ent, aList);
                     this.infernalMetadata.put(id, list);
                 } else {
@@ -473,7 +555,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }
         String list = getPowerString(ent, powerList);
         this.infernalMetadata.put(ent.getUniqueId(), list);
-        setMobSave(ent.getUniqueId().toString(), list);
+        // 能力は MOB 自身のデータに保存する(save.yml には書かない)
+        ent.getPersistentDataContainer().set(this.abilitiesKey, PersistentDataType.STRING, list);
     }
     
     private String getPowerString(Entity ent, List<String> powerList) {
@@ -489,16 +572,24 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     }
     
     void removeMob(int mobIndex) throws IOException {
-        String id = this.infernalList.get(mobIndex).id.toString();
+        InfernalMob mob = this.infernalList.get(mobIndex);
+        String id = mob.id.toString();
         this.infernalList.remove(mobIndex);
         this.infernalMetadata.remove(UUID.fromString(id));
-        setMobSave(id, null);
+        // MOB が残る場合(/im killall で名前を消すときなど)に、次の読み込みで Infernal Mob に戻らないよう消す
+        if (mob.entity != null) {
+            mob.entity.getPersistentDataContainer().remove(this.abilitiesKey);
+        }
+        // save.yml は古い行があるときだけ書き換える(毎回書き換えると、30 秒ごとに save.yml 全体を書き出すことになる)
+        if (this.saveValues.containsKey(id)) {
+            setMobSave(id, null);
+        }
     }
 
-    // チャンクの解放以外で消えた Infernal Mob を、一覧と save.yml から消す
+    // チャンクの解放以外で消えた Infernal Mob を、一覧と save.yml(古い行があれば)から消す。MOB 自身のデータは MOB と一緒に消える
     void forgetMob(UUID id) {
         String key = id.toString();
-        boolean saved = this.mobSaveFile.contains(key);
+        boolean saved = this.saveValues.containsKey(key);
         if (!saved && !this.infernalMetadata.containsKey(id)) {
             return;
         }

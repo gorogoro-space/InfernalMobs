@@ -15,15 +15,13 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntityRemoveEvent;
-import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.weather.LightningStrikeEvent;
-import org.bukkit.event.world.ChunkLoadEvent;
-import org.bukkit.event.world.ChunkUnloadEvent;
+import org.bukkit.event.world.EntitiesLoadEvent;
+import org.bukkit.event.world.EntitiesUnloadEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.util.Vector;
 
@@ -175,7 +173,7 @@ public class EventListener implements Listener {
             } catch (Exception ignored) {
             }
             p.sendMessage("§eName: §f" + name);
-            p.sendMessage("§eSaved: §f" + plugin.mobSaveFile.getString(ent.getUniqueId().toString()));
+            p.sendMessage("§eSaved: §f" + plugin.peekSavedPowers(ent));
             p.sendMessage("§eHealth: §f" + ((LivingEntity) ent).getAttribute(Attribute.MAX_HEALTH).getValue());
             p.sendMessage("§eInfernal: §f" + plugin.idSearch(ent.getUniqueId()));
         }
@@ -231,30 +229,20 @@ public class EventListener implements Listener {
         }
     }
 
+    // MOB が読み込まれたときに能力を付け直す。1.17 以降は MOB がチャンクとは別に読み込まれるので、ChunkLoadEvent の時点では MOB がいないことが多い
+    // (以前はそのため付け直されず、チャンクを離れて戻ると普通の MOB になっていた。テレポートのたびにワールド全体を調べる処理も不要になったので外した)
     @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerTeleport(PlayerTeleportEvent event) {
-        World world = event.getPlayer().getWorld();
-        plugin.giveMobsPowers(world);
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onPlayerChangedWorld(PlayerChangedWorldEvent event) {
-        World world = event.getPlayer().getWorld();
-        plugin.giveMobsPowers(world);
-    }
-
-    @EventHandler(priority = EventPriority.HIGH)
-    public void onChunkLoad(ChunkLoadEvent e) {
-        for (Entity ent : e.getChunk().getEntities()) {
-            if (((ent instanceof LivingEntity)) && (ent.customName() != null) && (plugin.mobSaveFile.getString(ent.getUniqueId().toString()) != null)) {
+    public void onEntitiesLoad(EntitiesLoadEvent e) {
+        for (Entity ent : e.getEntities()) {
+            if ((ent instanceof LivingEntity) && plugin.hasSavedPowers(ent)) {
                 plugin.giveMobPowers(ent);
             }
         }
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    public void onChunkUnload(ChunkUnloadEvent e) {
-        for (Entity ent : e.getChunk().getEntities()) {
+    public void onEntitiesUnload(EntitiesUnloadEvent e) {
+        for (Entity ent : e.getEntities()) {
             int s = plugin.idSearch(ent.getUniqueId());
             if (s != -1) {
                 plugin.infernalList.remove(plugin.infernalList.get(s));

@@ -302,3 +302,5 @@ enableDrops: true
 dropChance: 1
 enableFarmingDrops: false
 naturalSpawnHeight: 0
+# Days to keep old save.yml entries (from versions before 7.1.0) that were never loaded again. 0 = keep forever.
+legacySaveRetentionDays: 30

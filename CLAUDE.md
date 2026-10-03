@@ -37,7 +37,7 @@
 ## 最重要の設計方針
 
 ### TPS に影響させない
-- 高頻度イベント(`EntityDamageByEntityEvent`、`PlayerInteractEvent`、`ChunkLoadEvent`、`CreatureSpawnEvent` など)は、安い判定(ワールド、MOB の種類、Infernal かどうかなど)を先に行い、対象外なら即座に抜ける
+- 高頻度イベント(`EntityDamageByEntityEvent`、`PlayerInteractEvent`、`EntitiesLoadEvent`、`CreatureSpawnEvent` など)は、安い判定(ワールド、MOB の種類、Infernal かどうかなど)を先に行い、対象外なら即座に抜ける
 - `BlockPhysicsEvent`、`VehicleMoveEvent`、`PlayerMoveEvent` など発生頻度が極端に高いイベントは新たに使わない
 - メインスレッドでファイルや DB の同期 I/O をしない(ただし、起動時・リロード時に一度だけ行う小さなファイルの読み込みは除く)。未読み込みのチャンクを判定のために読み込まない(`getChunkAtAsync`、`teleportAsync` を使う)
 - 設定は起動時・リロード時に一度だけ解析して保持する。Material などの集合は EnumSet
@@ -48,10 +48,11 @@
 - 1.21 未満向けの古い `config.yml` / `loot.yml` は、`LegacyConfigConverter` が起動時と `/im reload` のときに自動で変換する。Minecraft の更新で名前が変わったら、その変換表に追加する
 
 ### データの保存
-- 設定とデータは `plugins/InfernalMobs/` の `config.yml`、`loot.yml`、`save.yml`(Infernal Mob の UUID と能力。チャンク読み込み時にここを見て能力を付け直す)
+- 設定とデータは `plugins/InfernalMobs/` の `config.yml`、`loot.yml`、`save.yml`(Infernal Mob が出るスポナーの設定、7.1.0 より前の版で保存した Infernal Mob の UUID と能力、古い行を消すまでの日数を数え始めた日時 `legacyCleanupStart`)
+- Infernal Mob の能力は、その MOB の PersistentDataContainer(キー `infernalmobs:abilities`、能力をカンマでつないだ文字列)に保存する
 - save.yml は 30 秒ごとにまとめて非同期で保存する(書き込み中は `save.yml.tmp` を使う)
 - 自動変換で書き換える前の控え: `config.yml.pre1.21.bak` / `loot.yml.pre1.21.bak`(すでにあれば日時付きの名前)
-- プラグインフォルダ以外には何も書き込まない
+- プラグインフォルダ以外には何も書き込まない。例外は、Infernal Mob の能力を保存する MOB の PersistentDataContainer(サーバーが MOB と一緒にワールドのデータへ保存する。2026-10-03 にユーザーが承認)
 
 ### 他プラグインとの関係
 - `softdepend: [Vault, WizardlyMagic]`
@@ -72,9 +73,11 @@
 - **盾の戦利品**: `ShieldMeta` で色と模様を読み書きする。`colour` を省略すると色のない普通の盾、`patterns` を省略すると模様なし。`setloot` は色のない盾では `colour` を書かない(原作は旗を経由していたため、色なしを表せず白い盾になり、`colour` か `patterns` がないと例外で落ちなかった)
 - **撃破メッセージの `weapon`**: 武器に名前があればその名前、なければ種類名(`diamond sword` など)、素手なら `fist`(原作は名前のない武器だと空文字になっていた)
 - **ボスバー・スコアボード**: 26 ブロック以内で最も近い Infernal Mob 1 体を表示する(`GUI.getNearbyBoss`)。表示する MOB が変わったら前のバーから外す。ダメージ時の更新は次の tick に行い(体力に反映された後の値を出すため)、同じ tick の更新は 1 回にまとめる。ほかに 1 秒ごとの定期更新(`scoreCheck`)がある(原作は最初に見つかった MOB を表示し、バーが重なったり 1 撃遅れたりしていた)
-- **save.yml の保存**: 出現・撃破・スポナーの設定などでは、`setMobSave(パス, 値)` でメモリ上の値を書き換えるだけにする(`mobSaveFile` と、値の一覧 `saveValues` の両方を書き換えて、変更ありの印を付ける)。30 秒ごとの定期タスク(`flushMobSaveFile`)が、変更があるときだけメインスレッドで `saveValues` の Map を写し、YAML への変換と書き込みは非同期で行う(`save.yml.tmp` に書いてから置き換える。古い内容で上書きしないよう順番の番号で判定)。停止時(`onDisable`)は同期で保存する。`mobSaveFile.set` や `mobSaveFile.save` を直接呼ばないこと(原作は出現・撃破のたびにメインスレッドで全体を保存し、save.yml が大きいと 1 秒近く止まっていた。v7.0.5 までは保存のたびに `getValues(true)` で全体を写していて、1 回 150ms ほど止まっていた)
+- **save.yml の保存**: スポナーの設定や古い行の削除などでは、`setMobSave(パス, 値)` でメモリ上の値を書き換えるだけにする(`mobSaveFile` と、値の一覧 `saveValues` の両方を書き換えて、変更ありの印を付ける)。30 秒ごとの定期タスク(`flushMobSaveFile`)が、変更があるときだけメインスレッドで `saveValues` の Map を写し、YAML への変換と書き込みは非同期で行う(`save.yml.tmp` に書いてから置き換える。古い内容で上書きしないよう順番の番号で判定)。停止時(`onDisable`)は同期で保存する。`mobSaveFile.set` や `mobSaveFile.save` を直接呼ばないこと(原作は出現・撃破のたびにメインスレッドで全体を保存し、save.yml が大きいと 1 秒近く止まっていた。v7.0.5 までは保存のたびに `getValues(true)` で全体を写していて、1 回 150ms ほど止まっていた)
 - **装備による常時効果(`applyEffect`)**: 10 秒ごとに、プレイヤーの持ち物が loot.yml の `potionEffects.*.requiredItems` を満たすか調べる。必要なアイテム(`getItem`)とその名前は 1 回の実行につき 1 度だけ作り、持ち物の名前もプレイヤーごとに 1 度だけ変換する(原作はプレイヤー × 効果 × 必要なアイテム × スロットごとに作り直し・変換していて、1 回 60ms ほどかかっていた)。名前がリストで指定された戦利品は、1 回の実行の中では全員が同じ名前と比べられる
-- **消えた Infernal Mob の後始末**: `EntityRemoveEvent` で、チャンクの解放(`UNLOAD`)とプレイヤーの退出(`PLAYER_QUIT`)以外の理由で消えた Infernal Mob を、`infernalList` と save.yml から消す(`forgetMob`)。原作は自然消滅や他プラグインによる削除で消えた MOB の行が残り続け、save.yml が大きくなり続けていた。すでに残っている古い行は消さない(未読み込みのチャンクにいる MOB と区別できないため)
+- **消えた Infernal Mob の後始末**: `EntityRemoveEvent` で、チャンクの解放(`UNLOAD`)とプレイヤーの退出(`PLAYER_QUIT`)以外の理由で消えた Infernal Mob を、`infernalList` と save.yml の古い行(あれば)から消す(`forgetMob`)。原作は自然消滅や他プラグインによる削除で消えた MOB の行が残り続け、save.yml が大きくなり続けていた(実際のサーバーで 45 万行になっていた)。morph では元の MOB を消した時点でここで一覧から外れるので、一覧の入れ替えでは見つからなければ追加する
+- **能力の保存と付け直し**: 新しい Infernal Mob の能力は `addHealth` で MOB の PersistentDataContainer に保存する(save.yml には書かない)。MOB が読み込まれたとき(`EntitiesLoadEvent`)に、PersistentDataContainer か save.yml の古い行を見て能力を付け直す(`hasSavedPowers` → `giveMobPowers`)。古い行しかなければ PersistentDataContainer へ移して行を消す(`loadSavedPowers`)。起動時は全ワールドの読み込み済みの MOB を 1 回だけ調べる(`reloadPowers`)。チャンクの解放は `EntitiesUnloadEvent` で一覧から外す。1.17 以降は MOB がチャンクと別に読み込まれるため、原作の `ChunkLoadEvent` では MOB がおらず、チャンクを離れて戻った Infernal Mob が普通の MOB になっていた。テレポート・ワールド移動のたびにワールド全体を調べる原作の処理は不要になったので外した。`removeMob` では MOB の PersistentDataContainer からも消す(`/im killall` などで MOB が残る場合のため)
+- **save.yml の古い行の掃除**: 起動時(`cleanupLegacySave`)に、`legacyCleanupStart` から `legacySaveRetentionDays`(初期値 30、0 で消さない)日たっていれば、残っている UUID の行をまとめて消してログに出し、`legacyCleanupStart` を今の日時にする。`legacyCleanupStart` がなければ今の日時を記録するだけ
 - **飛び道具の撃ち手**: 矢・雪玉は撃ち手が Entity のときだけ能力を処理する(ディスペンサーから撃たれたものは無視。原作は ClassCastException になっていた)
 - **webber**: 相手の足元が空気(`Material.isAir()`)のときだけ蜘蛛の巣を置く(原作はドアや看板なども上書きし、60 秒後に空気にして消していたため、LWC などの保護を無視してブロックを消せた)
 - **統計送信**: なし(サービスが終了していた旧 MCStats への送信処理は削除した)

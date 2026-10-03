@@ -51,7 +51,13 @@
 
 - `config.yml`: Infernal Mob の出現、能力、表示などの設定
 - `loot.yml`: 戦利品と、戦利品を持ったときの効果の設定
-- `save.yml`: Infernal Mob の能力と、Infernal Mob が出るスポナーの記録(プラグインが書き込むので、手で編集しないでください)。変更は 30 秒ごとにまとめて保存し、サーバーの停止時にも保存します。サーバーがクラッシュすると、最後の保存より後に出た Infernal Mob は再起動後に能力を失います
+- `save.yml`: Infernal Mob が出るスポナーの記録と、7.1.0 より前のバージョンで保存した Infernal Mob の能力(プラグインが書き込むので、手で編集しないでください)。変更は 30 秒ごとにまとめて保存し、サーバーの停止時にも保存します
+
+7.1.0 から、Infernal Mob の能力は save.yml ではなく、その MOB 自身のデータ(PersistentDataContainer)に保存します。MOB と一緒にワールドのデータ(`entities` フォルダ)に保存されるので、チャンクを離れて戻っても、サーバーを再起動しても能力は残ります。
+
+- 7.1.0 より前のバージョンで save.yml に保存された能力は、その MOB が読み込まれたときに MOB 自身のデータへ移し、save.yml からは消します
+- 移されないまま `legacySaveRetentionDays`(初期値 30 日)たった save.yml の行は、サーバーの起動時にまとめて消します(すでにいない MOB や、その間に誰も近づかなかった場所の MOB の行です)
+- 7.1.0 以降で出現した Infernal Mob は save.yml に記録されないため、7.1.0 より前のバージョンに戻すと能力を失います
 
 文字の色は `&` で始まる色コード(例: `&c` は赤、`&l` は太字)で指定できます。
 
@@ -69,6 +75,7 @@
 | `enabledSpawnReasons` | (理由の一覧) | Infernal Mob になる出現理由(`NATURAL` は自然湧き、`SPAWNER` はスポナーなど)。行頭の `#` を外すと有効になります |
 | `naturalSpawnHeight` | `0` | この高さ(Y 座標)より上で出現した MOB だけが Infernal Mob になります |
 | `disabledBabyMobs` | (MOB の一覧) | 子どもの場合は Infernal Mob にしない MOB |
+| `legacySaveRetentionDays` | `30` | 7.1.0 より前のバージョンで save.yml に保存された能力を、MOB へ移されないまま残しておく日数。この日数がたつと、サーバーの起動時に消します。`0` にすると消しません |
 
 #### 能力
 
