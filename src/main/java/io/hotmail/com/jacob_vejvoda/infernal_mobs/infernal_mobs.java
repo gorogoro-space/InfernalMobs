@@ -1655,7 +1655,13 @@ fertileList.remove(p);
                     if (aList.contains("flying")) {
                         makeFly(newEnt);
                     }
-                    this.infernalList.set(idSearch(id), newMob);
+                    // 元の MOB は atc.remove() の時点で EntityRemoveEvent(forgetMob)により一覧から外れているので、そのときは追加する
+                    int oldIndex = idSearch(id);
+                    if (oldIndex == -1) {
+                        this.infernalList.add(newMob);
+                    } else {
+                        this.infernalList.set(oldIndex, newMob);
+                    }
                     this.gui.setName(newEnt);
                     giveMobGear(newEnt, true);
                     addHealth(newEnt, aList);
