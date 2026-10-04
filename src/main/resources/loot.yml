@@ -210,27 +210,27 @@ potionEffects:
     - 108
   '39':
     potion: CONDUIT_POWER
-    level: 0
+    level: 1
     requiredItems:
     - 111
   '40':
     potion: BAD_OMEN
-    level: 0
+    level: 1
     requiredItems:
     - 112
   '41':
     potion: HUNGER
-    level: 0
+    level: 1
     requiredItems:
     - 113
   '42':
     potion: REGENERATION
-    level: 0
+    level: 1
     requiredItems:
     - 108
   '43':
     potion: GLOWING
-    level: 0
+    level: 1
     requiredItems:
     - 114
   '44':

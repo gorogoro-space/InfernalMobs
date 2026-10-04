@@ -111,6 +111,8 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     ArrayList<Player> errorList = new ArrayList<>();
     ArrayList<Player> levitateList = new ArrayList<>();
     public ArrayList<Player> fertileList = new ArrayList<>();
+    // applyEffect で例外になった potionEffects の番号(警告を同じ効果につき 1 回だけ出すため。loot.yml を読み直したら空にする)
+    private final Set<String> warnedCharmEffects = new HashSet<>();
     // save.yml に未保存の変更があるか(メインスレッドだけで読み書きする)
     private boolean saveDirty = false;
     // save.yml の値(パスと値。セクションは含まない)。mobSaveFile と同じ内容を持ち、保存のときはこれを写すだけにする
@@ -1433,6 +1435,14 @@ public class infernal_mobs extends JavaPlugin implements Listener {
         }, 1L);
     }
     public void applyEffect() {
+        // 途中で例外になっても次の実行を予約する(予約の前で止まると、再起動まで全員のチャームが効かなくなるため)
+        try {
+            checkCharms();
+        } finally {
+            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, this::applyEffect, (10 * 20));
+        }
+    }
+    private void checkCharms() {
         // 必要なアイテムとその名前は、プレイヤーごとに作り直さず、1 回の実行につき 1 度だけ作る(TPS 対策)
         // 名前は、ItemMeta がなければ null(名前を比べない)
         HashMap<Integer, ItemStack> neededItems = new HashMap<>();
@@ -1489,13 +1499,19 @@ public class infernal_mobs extends JavaPlugin implements Listener {
                                 }
                             }
                             if (itemsPlayerHas.size() >= lootFile.getIntegerList("potionEffects." + id + ".requiredItems").size()) {
-                                applyEffects(p, Integer.parseInt(id));
+                                // 1 つの効果の設定ミスで、ほかの効果やほかのプレイヤーの判定を止めない。警告は同じ効果につき 1 回だけ出す
+                                try {
+                                    applyEffects(p, Integer.parseInt(id));
+                                } catch (Exception e) {
+                                    if (warnedCharmEffects.add(id)) {
+                                        getLogger().log(Level.WARNING, "Could not apply potionEffects." + id + " in loot.yml (check its potion and level). This warning is shown once per effect until reload.", e);
+                                    }
+                                }
                             }
                         }
                 }
             }
         }
-        Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(this, this::applyEffect, (10 * 20));
     }
     private boolean isArmor(ItemStack s) {
         String t = s.getType().toString().toLowerCase();
@@ -1508,6 +1524,10 @@ public class infernal_mobs extends JavaPlugin implements Listener {
     }
     public void applyEffects(LivingEntity e, int effectID) {
         int level = this.lootFile.getInt("potionEffects." + effectID + ".level");
+        // level が 1 未満(原作の loot.yml の level: 0 など)なら 1 として扱う(強さが -1 にならないように)
+        if (level < 1) {
+            level = 1;
+        }
         String name = this.lootFile.getString("potionEffects." + effectID + ".potion");
         if ((getEffectType(name) == PotionEffectType.INSTANT_DAMAGE) || (getEffectType(name) == PotionEffectType.INSTANT_HEALTH)) {
             e.addPotionEffect(new PotionEffect(getEffectType(name), 1, level - 1));
@@ -1524,7 +1544,7 @@ public class infernal_mobs extends JavaPlugin implements Listener {
      for(String s : this.lootFile.getStringList("consumeEffects." + effectID + ".potionEffects")) {
      String[] split = s.split(":");
      String name = split[0];
-     int level = Integer.parseInt(split[1]);
+     int level = Math.max(1, Integer.parseInt(split[1])); // 1 未満なら 1 として扱う
         int time = Integer.parseInt(split[2]);
         if((name.equalsIgnoreCase("fertility")) && (e instanceof Player)) {
          fertileList.add(((Player)e));
@@ -2436,6 +2456,7 @@ fertileList.remove(p);
         this.lootFile = YamlConfiguration.loadConfiguration(this.lootYML);
         YamlConfiguration defConfig = YamlConfiguration.loadConfiguration(lootYML);
         this.lootFile.setDefaults(defConfig);
+        this.warnedCharmEffects.clear();
     }
     String getLocationName(Location l) {
         return (l.getX() + "." + l.getY() + "." + l.getZ() + l.getWorld().getName()).replace(".", "");
